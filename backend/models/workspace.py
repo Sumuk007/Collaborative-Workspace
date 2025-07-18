@@ -19,3 +19,5 @@ class Workspace(Base):
     owner = relationship("User", back_populates="owned_workspaces")
     memberships = relationship("Membership", back_populates="workspace", cascade="all, delete")
     documents = relationship("Document", back_populates="workspace", cascade="all, delete")
+    roles = relationship("Role", back_populates="workspace", cascade="all, delete-orphan")
+

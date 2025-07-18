@@ -5,6 +5,9 @@ from sqlalchemy.orm import sessionmaker
 from db.database import Base
 from models.user import User
 from models.document import Document
+from models.membership import Membership
+from models.workspace import Workspace
+from models.role import Role
 
 # In-memory SQLite for isolated testing
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"

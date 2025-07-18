@@ -2,9 +2,12 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from models.document import Document
 from schemas.document_schema import DocumentCreate, DocumentUpdate
+from utils.permissions import check_permission
 
 
-def create_document(db: Session, owner_id, document: DocumentCreate):
+def create_document(db: Session, owner_id, document: DocumentCreate, membership):
+    check_permission(membership, "create_document")
+
     db_document = Document(
         title=document.title,
         content=document.content,
@@ -16,7 +19,9 @@ def create_document(db: Session, owner_id, document: DocumentCreate):
     return db_document
 
 
-def get_document_by_id(db: Session, document_id):
+def get_document_by_id(db: Session, document_id, membership):
+    check_permission(membership, "view_document")
+
     document = db.query(Document).filter(Document.id == document_id).first()
     if not document:
         raise HTTPException(
@@ -26,7 +31,9 @@ def get_document_by_id(db: Session, document_id):
     return document
 
 
-def get_documents_by_owner(db: Session, owner_id):
+def get_documents_by_owner(db: Session, owner_id, membership):
+    check_permission(membership, "view_document")
+
     documents = db.query(Document).filter(Document.owner_id == owner_id).all()
     if not documents:
         raise HTTPException(
@@ -36,7 +43,9 @@ def get_documents_by_owner(db: Session, owner_id):
     return documents
 
 
-def update_document(db: Session, db_document: Document, updates: DocumentUpdate):
+def update_document(db: Session, db_document: Document, updates: DocumentUpdate, membership):
+    check_permission(membership, "edit_document")
+
     if updates.title is None and updates.content is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -53,7 +62,9 @@ def update_document(db: Session, db_document: Document, updates: DocumentUpdate)
     return db_document
 
 
-def delete_document(db: Session, db_document: Document):
+def delete_document(db: Session, db_document: Document, membership):
+    check_permission(membership, "delete_document")
+
     if db_document is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

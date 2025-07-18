@@ -1,18 +1,10 @@
-from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID
 from datetime import datetime
 
 
-class RoleEnum(str, Enum):
-    OWNER = "owner"
-    ADMIN = "admin"
-    MEMBER = "member"
-    VIEWER = "viewer"
-
-
 class MembershipBase(BaseModel):
-    role: RoleEnum = Field(default=RoleEnum.MEMBER)
+    role_id: UUID  # ✅ FK to Role.id
 
 
 class MembershipCreate(MembershipBase):
@@ -20,7 +12,7 @@ class MembershipCreate(MembershipBase):
 
 
 class MembershipUpdate(BaseModel):
-    role: RoleEnum | None = None
+    role_id: UUID | None = None
 
 
 class MembershipInDBBase(MembershipBase):
@@ -33,5 +25,5 @@ class MembershipInDBBase(MembershipBase):
     updated_at: datetime
 
 
-class Membership(MembershipInDBBase):
+class Membership_all(MembershipInDBBase):
     pass

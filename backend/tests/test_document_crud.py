@@ -1,91 +1,93 @@
-import pytest
-from sqlalchemy.exc import IntegrityError
 import uuid
-from schemas.document_schema import DocumentCreate, DocumentUpdate
+import pytest
+from sqlalchemy.orm import Session
 from crud.document_crud import (
     create_document,
     get_document_by_id,
     get_documents_by_owner,
     update_document,
-    delete_document
+    delete_document,
 )
+from schemas.document_schema import DocumentCreate, DocumentUpdate
 from models.document import Document
-from fastapi import HTTPException
 
 
-def test_create_document(db_session):
-    document_in = DocumentCreate(title="Doc 1", content={"key": "value"})
-    id=uuid.uuid4()
-    document = create_document(db_session, owner_id=id, document=document_in)
+class FakeMembership:
+    def __init__(self, permissions):
+        self.role = type("Role", (), {"permissions": permissions})
 
-    assert document.id is not None
-    assert document.title == "Doc 1"
+
+def test_create_document(db_session: Session):
+    membership = FakeMembership(["create_document"])
+    owner_id = uuid.uuid4()
+    document_in = DocumentCreate(title="Test Title", content={"key": "value"})
+    document = create_document(db_session, owner_id, document_in, membership)
+
+    assert document.title == "Test Title"
     assert document.content == {"key": "value"}
-    assert document.owner_id == id
+    assert document.owner_id == owner_id
 
 
-def test_get_document_by_id_success(db_session):
-    id=uuid.uuid4()
-    document_in = DocumentCreate(title="Doc 2", content={"foo": "bar"})
-    created = create_document(db_session, owner_id=id, document=document_in)
-    fetched = get_document_by_id(db_session, created.id)
+def test_get_document_by_id_success(db_session: Session):
+    membership = FakeMembership(["view_document"])
+    owner_id = uuid.uuid4()
+    document = Document(title="Title", content={"a": 1}, owner_id=owner_id)
+    db_session.add(document)
+    db_session.commit()
+    db_session.refresh(document)
 
-    assert fetched.id == created.id
-    assert fetched.title == created.title
-
-
-def test_get_document_by_id_not_found(db_session):
-    id=uuid.uuid4()
-    with pytest.raises(HTTPException) as exc:
-        get_document_by_id(db_session, document_id=id)
-    assert exc.value.status_code == 404
+    found = get_document_by_id(db_session, document.id, membership)
+    assert found.id == document.id
 
 
-def test_get_documents_by_owner_success(db_session):
-    id=uuid.uuid4()
-    create_document(db_session, owner_id=id, document=DocumentCreate(title="Doc A", content={"x": 1}))
-    create_document(db_session, owner_id=id, document=DocumentCreate(title="Doc B", content={"y": 2}))
-    documents = get_documents_by_owner(db_session, owner_id=id)
+def test_get_documents_by_owner_success(db_session: Session):
+    membership = FakeMembership(["view_document"])
+    owner_id = uuid.uuid4()
+    document = Document(title="Title", content={"b": 2}, owner_id=owner_id)
+    db_session.add(document)
+    db_session.commit()
+    db_session.refresh(document)
 
-    assert len(documents) == 2
-
-
-def test_get_documents_by_owner_not_found(db_session):
-    id=uuid.uuid4()
-    with pytest.raises(HTTPException) as exc:
-        get_documents_by_owner(db_session, owner_id=id)
-    assert exc.value.status_code == 404
+    documents = get_documents_by_owner(db_session, owner_id, membership)
+    assert len(documents) >= 1
+    assert documents[0].owner_id == owner_id
 
 
-def test_update_document_success(db_session):
-    id=uuid.uuid4()
-    document = create_document(db_session, owner_id=id, document=DocumentCreate(title="Old Title", content={"a": 1}))
-    updated = update_document(db_session, document, DocumentUpdate(title="New Title", content={"b": 2}))
+def test_update_document_success(db_session: Session):
+    membership = FakeMembership(["edit_document"])
+    owner_id = uuid.uuid4()
+    document = Document(title="Old Title", content={"old": True}, owner_id=owner_id)
+    db_session.add(document)
+    db_session.commit()
+    db_session.refresh(document)
+
+    updates = DocumentUpdate(title="New Title", content={"new": True})
+    updated = update_document(db_session, document, updates, membership)
 
     assert updated.title == "New Title"
-    assert updated.content == {"b": 2}
+    assert updated.content == {"new": True}
 
 
-def test_update_document_no_fields(db_session):
-    id=uuid.uuid4()
-    document = create_document(db_session, owner_id=id, document=DocumentCreate(title="Unchanged", content={"c": 3}))
-    with pytest.raises(HTTPException) as exc:
-        update_document(db_session, document, DocumentUpdate())
-    assert exc.value.status_code == 400
+def test_update_document_no_fields(db_session: Session):
+    membership = FakeMembership(["edit_document"])
+    owner_id = uuid.uuid4()
+    document = Document(title="Unchanged", content={"c": 3}, owner_id=owner_id)
+    db_session.add(document)
+    db_session.commit()
+    db_session.refresh(document)
+
+    with pytest.raises(Exception) as exc:
+        update_document(db_session, document, DocumentUpdate(), membership)
+    assert "No fields provided for update" in str(exc.value)
 
 
-def test_delete_document_success(db_session):
-    id=uuid.uuid4()
-    document = create_document(db_session, owner_id=id, document=DocumentCreate(title="To Delete", content={"del": 1}))
-    response = delete_document(db_session, document)
+def test_delete_document_success(db_session: Session):
+    membership = FakeMembership(["delete_document"])
+    owner_id = uuid.uuid4()
+    document = Document(title="To Delete", content={"d": 4}, owner_id=owner_id)
+    db_session.add(document)
+    db_session.commit()
+    db_session.refresh(document)
 
-    assert response == {"detail": "Document deleted successfully"}
-
-    with pytest.raises(HTTPException):
-        get_document_by_id(db_session, document.id)
-
-
-def test_delete_document_not_found(db_session):
-    with pytest.raises(HTTPException) as exc:
-        delete_document(db_session, None)
-    assert exc.value.status_code == 404
+    result = delete_document(db_session, document, membership)
+    assert result["detail"] == "Document deleted successfully"

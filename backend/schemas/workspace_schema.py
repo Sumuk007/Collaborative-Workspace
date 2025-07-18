@@ -28,6 +28,8 @@ class WorkspaceUpdate(BaseModel):
             raise ValueError("Workspace name must not be blank.")
         return value
 
+    model_config = ConfigDict(from_attributes=True)   # ✅ Add this to avoid schema warnings
+
 
 class WorkspaceInDBBase(WorkspaceBase):
     model_config = ConfigDict(from_attributes=True)
@@ -40,3 +42,7 @@ class WorkspaceInDBBase(WorkspaceBase):
 
 class Workspace(WorkspaceInDBBase):
     pass
+
+class WorkspaceOut(WorkspaceInDBBase):
+    pass
+

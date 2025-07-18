@@ -1,6 +1,6 @@
 from logging.config import fileConfig
 from db.database import Base
-from models import user, document, membership, workspace  # Import all models here
+from models import user, document, membership, workspace, role  # Import all models here
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 

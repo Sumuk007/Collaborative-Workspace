@@ -1,21 +1,35 @@
-from pydantic import BaseModel, EmailStr, UUID4, Field, constr
-from typing import Optional
+from pydantic import BaseModel, EmailStr, ConfigDict
+from uuid import UUID
 from datetime import datetime
 
 
 class UserBase(BaseModel):
-    name: Optional[constr(strip_whitespace=True, min_length=2, max_length=50)]
     email: EmailStr
+    name: str | None = None
 
 
 class UserCreate(UserBase):
-    password: Optional[constr(strip_whitespace=True, min_length=8, max_length=128)]
+    password: str
 
 
-class UserResponse(UserBase):
-    id: UUID4
+# For user output in signup (to avoid leaking password hash)
+class UserOut(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+
+# For login payload
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserResponse(UserBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+
