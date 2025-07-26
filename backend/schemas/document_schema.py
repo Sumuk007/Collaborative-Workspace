@@ -29,8 +29,12 @@ class DocumentOut(BaseModel):
     title: str
     workspace_id: UUID
     content: dict  # Return JSON to frontend
-    created_at: Optional[str]
-    updated_at: Optional[str]
+    created_at: datetime
+    updated_at: datetime
 
-    class Config:
-        model_config = ConfigDict(from_attributes=True)
+    model_config = {
+        "from_attributes": True,
+        "json_encoders": {
+            datetime: lambda v: v.isoformat()
+        }
+    }

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, constr
 from uuid import UUID
 from datetime import datetime
 
@@ -32,4 +32,9 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: datetime
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
 
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str

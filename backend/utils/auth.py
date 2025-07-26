@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from dotenv import load_dotenv
-from fastapi import Depends, HTTPException, status, Security
+from fastapi import Depends, HTTPException, status, Security, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 import os
@@ -38,17 +38,23 @@ def verify_access_token(token: str):
         return None
 
 
+
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Security(security),
+    access_token: str = Cookie(None),  # Read token from "access_token" cookie, allow None
     db: Session = Depends(get_db)
 ) -> User:
-    token = credentials.credentials  # Extract token from "Authorization: Bearer <token>"
-    payload = verify_access_token(token)
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+        )
+    print("access token:",access_token)
+
+    payload = verify_access_token(access_token)
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
         )
 
     user_id: UUID = payload.get("sub")
@@ -56,8 +62,7 @@ def get_current_user(
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid token payload",
         )
 
     user = db.query(User).filter(User.id == user_id).first()
@@ -65,7 +70,6 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
         )
 
     return user

@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 class WorkspaceBase(BaseModel):
-    name: str = Field(..., min_length=3, max_length=50, description="Workspace name between 3 and 50 characters")
+    name: str = Field(..., max_length=50)
 
     @field_validator("name")
     @classmethod
