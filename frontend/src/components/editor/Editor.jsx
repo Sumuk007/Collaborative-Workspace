@@ -3,8 +3,8 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
-import { useParams } from "react-router-dom";
-import { getDocument, updateDocument, updateTitle } from "../../services/auth"; // Add getDocument
+import { useParams, useNavigate } from "react-router-dom";
+import { getDocument, updateDocument, updateTitle } from "../../services/auth";
 import {
   Bold,
   Italic,
@@ -18,46 +18,43 @@ import {
   Undo,
   Redo,
   Type,
+  ArrowLeft,
 } from "lucide-react";
 
 const Editor = () => {
   const { workspaceId, documentId } = useParams();
+  const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
   const [loading, setLoading] = useState(true);
-  const [initialContent, setInitialContent] = useState({});
 
-  // Initialize the editor at the top level, not inside useEffect
-  // Add a state to force re-render on selection update
   const [selectionState, setSelectionState] = useState(0);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         bulletList: true,
         orderedList: true,
-        heading: {
-          levels: [1, 2, 3],
-        },
+        heading: { levels: [1, 2, 3] },
         underline: false,
       }),
-      TextAlign.configure({
-        types: ["heading", "paragraph"],
-      }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
       Underline,
     ],
-    content: "", // Only used at first mount!
+    content: "",
     editorProps: {
       attributes: {
-        class:
-          "prose prose-lg max-w-none focus:outline-none min-h-[500px] px-12 py-8",
+        class: "prose prose-lg max-w-none focus:outline-none min-h-[500px] px-12 py-8",
       },
     },
     autofocus: false,
-    onUpdate: () => {
+    onUpdate: ({ editor }) => {
       setSelectionState((s) => s + 1);
     },
-    onSelectionUpdate: () => {
+    onSelectionUpdate: ({ editor }) => {
+      setSelectionState((s) => s + 1);
+    },
+    onFocus: ({ editor }) => {
       setSelectionState((s) => s + 1);
     },
   });
@@ -68,32 +65,33 @@ const Editor = () => {
       try {
         const doc = await getDocument(documentId);
         setTitle(doc.title);
-        console.log("doc.content:", doc);
-        const parsedContent = JSON.parse(doc);
-        setInitialContent(parsedContent.content);
-        console.log("Initial content:", initialContent);
+        
+        // Set editor content directly - no intermediate state needed
+        const tiptapContent = doc.content.content;
+        if (editor && !editor.isDestroyed && tiptapContent && tiptapContent.type === "doc") {
+          console.log("Setting editor content:", tiptapContent);
+          editor.commands.setContent(tiptapContent);
+        } else if (editor && !editor.isDestroyed) {
+          // Fallback for invalid content
+          editor.commands.setContent({ type: "doc", content: [] });
+        }
       } catch (err) {
+        console.error("Failed to load document:", err);
         setTitle("Failed to load");
-        setInitialContent({});
+        if (editor && !editor.isDestroyed) {
+          editor.commands.setContent({ type: "doc", content: [] });
+        }
       } finally {
         setLoading(false);
       }
     };
-    if (documentId) fetchDoc();
-  }, [documentId]);
 
-  // When initialContent changes (e.g., after fetch), update the editor content
-  useEffect(() => {
-    if (
-      editor &&
-      initialContent &&
-      initialContent.type === "doc" &&
-      JSON.stringify(editor.getJSON()) !== JSON.stringify(initialContent)
-    ) {
-      editor.commands.setContent(initialContent);
+    if (documentId && editor) { // Wait for both documentId AND editor
+      fetchDoc();
     }
-  }, [editor, initialContent]);
+  }, [documentId, editor]); // Include editor in dependencies
 
+  // Update your ToolbarButton component to ensure proper active state detection
   const ToolbarButton = ({ onClick, isActive, children, title }) => (
     <button
       onClick={onClick}
@@ -130,6 +128,10 @@ const Editor = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate(`/workspace/${workspaceId}`);
+  };
+
   if (loading || !editor) return <div>Loading...</div>;
 
   return (
@@ -138,6 +140,15 @@ const Editor = () => {
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            {/* Back Button */}
+            <button
+              onClick={handleBack}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 hover:text-gray-800"
+              title="Back to workspace"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            
             <div className="flex items-center space-x-2">
               <Type className="w-6 h-6 text-blue-600" />
               <input
@@ -186,22 +197,32 @@ const Editor = () => {
 
             {/* Text Formatting */}
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              isActive={editor.isActive("bold")}
+              onClick={() => {
+                editor.chain().focus().toggleBold().run();
+                // Force a state update to ensure immediate visual feedback
+                setSelectionState((s) => s + 1);
+              }}
+              isActive={editor?.isActive("bold") || false}
               title="Bold"
             >
               <Bold className="w-4 h-4" />
             </ToolbarButton>
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              isActive={editor.isActive("italic")}
+              onClick={() => {
+                editor.chain().focus().toggleItalic().run();
+                setSelectionState((s) => s + 1);
+              }}
+              isActive={editor?.isActive("italic") || false}
               title="Italic"
             >
               <Italic className="w-4 h-4" />
             </ToolbarButton>
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              isActive={editor.isActive("underline")}
+              onClick={() => {
+                editor.chain().focus().toggleUnderline().run();
+                setSelectionState((s) => s + 1);
+              }}
+              isActive={editor?.isActive("underline") || false}
               title="Underline"
             >
               <UnderlineIcon className="w-4 h-4" />

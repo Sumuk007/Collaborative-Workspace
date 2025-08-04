@@ -17,6 +17,7 @@ from crud.document_crud import (
 from crud.membership_crud import get_memberships_by_user
 from uuid import UUID
 from typing import List
+import json
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -52,7 +53,14 @@ def get_document_endpoint(
     if not db_document:
         raise HTTPException(status_code=404, detail="Document not found.")
     get_user_membership(db, current_user.id, db_document.workspace_id)
-    return get_document_by_id(db, document_id)
+    # Ensure content is always a dict, not a string
+    doc = get_document_by_id(db, document_id)
+    if isinstance(doc.content, str):
+        try:
+            doc.content = json.loads(doc.content)
+        except Exception:
+            doc.content = {"type": "doc", "content": []}
+    return doc
 
 @router.get("/workspace/{workspace_id}", response_model=List[DocumentOut])
 def get_documents(workspace_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
