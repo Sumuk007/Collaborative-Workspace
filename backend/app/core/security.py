@@ -1,4 +1,5 @@
 import bcrypt
+import secrets
 from app.config import settings
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -91,3 +92,35 @@ def get_current_user(
         )
     
     return user
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create refresh token (long-lived)"""
+    from app.config import settings
+    
+    to_encode = data.copy()
+    
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+    
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    return encoded_jwt
+
+def create_reset_token() -> str:
+    """Generate random reset token"""
+    return secrets.token_urlsafe(32)
+
+def verify_refresh_token(token: str) -> Optional[str]:
+    """Verify refresh token"""
+    from app.config import settings
+    
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        if payload.get("type") != "refresh":
+            return None
+        user_id: str = payload.get("sub")
+        return user_id
+    except JWTError:
+        return None
