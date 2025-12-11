@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -16,3 +17,7 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     last_login = Column(DateTime, nullable=True)
+    
+    # Relationships
+    documents = relationship("Document", back_populates="owner")
+    document_access = relationship("DocumentCollaborator", back_populates="user")
