@@ -2,8 +2,11 @@ from sqlalchemy.orm import Session
 from app.models.document import Document
 from app.models.user import User
 from app.models.document_collaborator import DocumentCollaborator
+from app.models.share_link import ShareLink
 from app.schemas.document import DocumentCreate, DocumentUpdate
 from typing import List, Optional, Literal
+from datetime import datetime, timedelta
+import secrets
 
 
 def create_document(db: Session, document_data: DocumentCreate, owner_id: int) -> Document:
@@ -141,7 +144,11 @@ def add_collaborator(db: Session, document_id: int, user_id: int, role: Literal[
     ).first()
     
     if existing:
-        raise ValueError("User is already a collaborator")
+        raise ValueError(f"User already has '{existing.role}' role on this document")
+    
+    # Validate role
+    if role not in ["editor", "reader"]:
+        raise ValueError("Role must be 'editor' or 'reader'")
     
     collaborator = DocumentCollaborator(
         document_id=document_id,
@@ -174,4 +181,117 @@ def get_document_collaborators(db: Session, document_id: int) -> List[DocumentCo
     """Get all collaborators for a document"""
     return db.query(DocumentCollaborator).filter(
         DocumentCollaborator.document_id == document_id
+    ).all()
+
+
+def create_share_link(db: Session, document_id: int, role: str, created_by: int, expires_in_hours: Optional[int] = None) -> ShareLink:
+    """Create a shareable link for a document"""
+    token = secrets.token_urlsafe(32)
+    
+    expires_at = None
+    if expires_in_hours:
+        expires_at = datetime.utcnow() + timedelta(hours=expires_in_hours)
+    
+    share_link = ShareLink(
+        document_id=document_id,
+        token=token,
+        role=role,
+        created_by=created_by,
+        expires_at=expires_at
+    )
+    db.add(share_link)
+    db.commit()
+    db.refresh(share_link)
+    return share_link
+
+
+def get_share_link_by_token(db: Session, token: str) -> Optional[ShareLink]:
+    """Get a share link by token"""
+    share_link = db.query(ShareLink).filter(
+        ShareLink.token == token,
+        ShareLink.is_active == 1
+    ).first()
+    
+    if not share_link:
+        return None
+    
+    # Check if expired
+    if share_link.expires_at and share_link.expires_at < datetime.utcnow():
+        return None
+    
+    return share_link
+
+
+def accept_share_link(db: Session, token: str, user_id: int) -> Optional[DocumentCollaborator]:
+    """Accept a share link and add user as collaborator"""
+    share_link = get_share_link_by_token(db, token)
+    
+    if not share_link:
+        return None
+    
+    # Check if user is already a collaborator
+    existing = db.query(DocumentCollaborator).filter(
+        DocumentCollaborator.document_id == share_link.document_id,
+        DocumentCollaborator.user_id == user_id
+    ).first()
+    
+    if existing:
+        raise ValueError("You are already a collaborator on this document")
+    
+    # Add user as collaborator
+    collaborator = DocumentCollaborator(
+        document_id=share_link.document_id,
+        user_id=user_id,
+        role=share_link.role
+    )
+    db.add(collaborator)
+    db.commit()
+    db.refresh(collaborator)
+    return collaborator
+
+
+def revoke_share_link(db: Session, document_id: int, token: str) -> bool:
+    """Revoke/disable a share link"""
+    share_link = db.query(ShareLink).filter(
+        ShareLink.document_id == document_id,
+        ShareLink.token == token
+    ).first()
+    
+    if not share_link:
+        return False
+    
+    share_link.is_active = 0
+    db.commit()
+    return True
+
+
+def update_collaborator_role(db: Session, document_id: int, user_id: int, new_role: Literal["editor", "reader"]) -> Optional[DocumentCollaborator]:
+    """Update a collaborator's role - cannot change owner role"""
+    collaborator = db.query(DocumentCollaborator).filter(
+        DocumentCollaborator.document_id == document_id,
+        DocumentCollaborator.user_id == user_id
+    ).first()
+    
+    if not collaborator:
+        return None
+    
+    # Cannot change owner role
+    if collaborator.role == "owner":
+        raise ValueError("Cannot change owner's role")
+    
+    # Validate new role
+    if new_role not in ["editor", "reader"]:
+        raise ValueError("Role must be 'editor' or 'reader'")
+    
+    collaborator.role = new_role
+    db.commit()
+    db.refresh(collaborator)
+    return collaborator
+
+
+def get_document_share_links(db: Session, document_id: int) -> List[ShareLink]:
+    """Get all share links for a document"""
+    return db.query(ShareLink).filter(
+        ShareLink.document_id == document_id,
+        ShareLink.is_active == 1
     ).all()

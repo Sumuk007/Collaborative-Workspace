@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import Literal
+from typing import Literal, Optional
+from datetime import datetime
 
 class CollaboratorAdd(BaseModel):
     user_id: int = Field(..., gt=0)
@@ -23,3 +24,19 @@ class CollaboratorOut(BaseModel):
 
 class CollaboratorRemove(BaseModel):
     user_id: int = Field(..., gt=0)
+
+class CollaboratorUpdateRole(BaseModel):
+    role: Literal["editor", "reader"]
+
+class ShareLinkCreate(BaseModel):
+    role: Literal["editor", "reader"] = "reader"
+    expires_in_hours: Optional[int] = Field(None, ge=1, le=720)  # Max 30 days
+
+class ShareLinkOut(BaseModel):
+    token: str
+    role: str
+    expires_at: Optional[datetime]
+    share_url: str
+    
+    class Config:
+        from_attributes = True

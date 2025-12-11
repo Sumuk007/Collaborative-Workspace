@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app.schemas.document import DocumentCreate, DocumentUpdate, DocumentOut
-from app.schemas.collaborator import CollaboratorAdd, CollaboratorOut, CollaboratorRemove
+from app.schemas.collaborator import CollaboratorAdd, CollaboratorOut, CollaboratorRemove, CollaboratorUpdateRole, ShareLinkCreate, ShareLinkOut
 from app.services.document_service import (
     create_document,
     get_document_by_id,
@@ -15,7 +15,12 @@ from app.services.document_service import (
     get_user_role_for_document,
     add_collaborator,
     remove_collaborator,
-    get_document_collaborators
+    get_document_collaborators,
+    update_collaborator_role,
+    create_share_link,
+    accept_share_link,
+    revoke_share_link,
+    get_document_share_links
 )
 from app.core.security import get_current_user
 from app.models.user import User
@@ -131,20 +136,26 @@ def update_existing_document(
             detail="Document not found"
         )
     
-    # Check user's role for this document
+    # CRITICAL: Check user's role for this document
     user_role = get_user_role_for_document(db, document_id, current_user.id)
     
     if not user_role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this document"
+            detail="Access denied. You are not a collaborator on this document."
         )
     
     # Only owner and editor can update
+    if user_role == "reader":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Readers cannot edit documents. Required role: owner or editor."
+        )
+    
     if user_role not in ["owner", "editor"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only owner and editor can update this document"
+            detail=f"Access denied. Your role '{user_role}' cannot edit documents. Required role: owner or editor."
         )
     
     # Validate that at least one field is being updated
@@ -175,7 +186,7 @@ def delete_existing_document(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Delete a document - only owner can delete"""
+    """Delete a document - ONLY owner can delete"""
     document = get_document_by_id(db, document_id)
     
     if not document:
@@ -184,20 +195,27 @@ def delete_existing_document(
             detail="Document not found"
         )
     
-    # Check user's role for this document
+    # CRITICAL: Check user's role for this document
     user_role = get_user_role_for_document(db, document_id, current_user.id)
     
     if not user_role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this document"
+            detail="Access denied. You are not a collaborator on this document."
         )
     
-    # Only owner can delete
+    # ONLY owner can delete - very strict check
     if user_role != "owner":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only owner can delete this document"
+            detail=f"Access denied. Only the document owner can delete documents. Your role: {user_role}"
+        )
+    
+    # Double-check ownership via owner_id
+    if document.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. You are not the owner of this document."
         )
     
     delete_document(db, document_id)
@@ -254,7 +272,7 @@ def add_document_collaborator(
     if user_role != "owner":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only owner can add collaborators"
+            detail=f"Access denied. Only the document owner can add collaborators. Your role: {user_role or 'none'}"
         )
     
     # Check if the user to be added exists
@@ -263,14 +281,21 @@ def add_document_collaborator(
     if not user_to_add:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            detail=f"User with ID {collaborator_data.user_id} not found"
         )
     
     # Cannot add owner as collaborator (they're already the owner)
     if collaborator_data.user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot add yourself as collaborator"
+            detail="Cannot add yourself as a collaborator. You are already the owner."
+        )
+    
+    # Check if user is already owner
+    if collaborator_data.user_id == document.owner_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot add the document owner as a collaborator."
         )
     
     try:
@@ -284,7 +309,7 @@ def add_document_collaborator(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to add collaborator"
+            detail=f"Failed to add collaborator: {str(e)}"
         )
 
 
@@ -310,14 +335,21 @@ def remove_document_collaborator(
     if user_role != "owner":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only owner can remove collaborators"
+            detail=f"Access denied. Only the document owner can remove collaborators. Your role: {user_role or 'none'}"
         )
     
     # Cannot remove owner
     if user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot remove owner from document"
+            detail="Cannot remove yourself (owner) from the document."
+        )
+    
+    # Check if user to remove is the owner
+    if user_id == document.owner_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot remove the document owner."
         )
     
     success = remove_collaborator(db, document_id, user_id)
@@ -325,7 +357,208 @@ def remove_document_collaborator(
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Collaborator not found"
+            detail=f"User with ID {user_id} is not a collaborator on this document."
+        )
+    
+    return None
+
+
+@router.put("/{document_id}/collaborators/{user_id}", response_model=CollaboratorOut)
+def update_document_collaborator_role(
+    document_id: int,
+    user_id: int,
+    role_data: CollaboratorUpdateRole,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update a collaborator's role - only owner can update roles"""
+    document = get_document_by_id(db, document_id)
+    
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+    
+    # Only owner can update roles
+    user_role = get_user_role_for_document(db, document_id, current_user.id)
+    
+    if user_role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied. Only the document owner can update collaborator roles. Your role: {user_role or 'none'}"
+        )
+    
+    # Cannot update owner's role
+    if user_id == document.owner_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change the document owner's role."
+        )
+    
+    try:
+        updated_collaborator = update_collaborator_role(db, document_id, user_id, role_data.role)
+        if not updated_collaborator:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} is not a collaborator on this document."
+            )
+        return updated_collaborator
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update collaborator role: {str(e)}"
+        )
+
+
+@router.post("/{document_id}/share", response_model=ShareLinkOut, status_code=status.HTTP_201_CREATED)
+def create_document_share_link(
+    document_id: int,
+    share_data: ShareLinkCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a shareable link for document - only owner can create share links"""
+    document = get_document_by_id(db, document_id)
+    
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+    
+    # Only owner can create share links
+    user_role = get_user_role_for_document(db, document_id, current_user.id)
+    if user_role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owner can create share links"
+        )
+    
+    try:
+        share_link = create_share_link(
+            db,
+            document_id,
+            share_data.role,
+            current_user.id,
+            share_data.expires_in_hours
+        )
+        
+        # Construct share URL (adjust base_url for production)
+        base_url = "http://localhost:3000"  # Frontend URL
+        share_url = f"{base_url}/share/{share_link.token}"
+        
+        return {
+            "token": share_link.token,
+            "role": share_link.role,
+            "expires_at": share_link.expires_at,
+            "share_url": share_url
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create share link"
+        )
+
+
+@router.post("/share/{token}/accept", response_model=CollaboratorOut)
+def accept_document_share_link(
+    token: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Accept a share link and become a collaborator"""
+    try:
+        collaborator = accept_share_link(db, token, current_user.id)
+        if not collaborator:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invalid or expired share link"
+            )
+        return collaborator
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to accept share link"
+        )
+
+
+@router.get("/{document_id}/share", response_model=List[ShareLinkOut])
+def list_document_share_links(
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List all active share links for a document - only owner can view"""
+    document = get_document_by_id(db, document_id)
+    
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+    
+    # Only owner can view share links
+    user_role = get_user_role_for_document(db, document_id, current_user.id)
+    if user_role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owner can view share links"
+        )
+    
+    share_links = get_document_share_links(db, document_id)
+    
+    base_url = "http://localhost:3000"
+    return [
+        {
+            "token": link.token,
+            "role": link.role,
+            "expires_at": link.expires_at,
+            "share_url": f"{base_url}/share/{link.token}"
+        }
+        for link in share_links
+    ]
+
+
+@router.delete("/{document_id}/share/{token}", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_document_share_link(
+    document_id: int,
+    token: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Revoke a share link - only owner can revoke"""
+    document = get_document_by_id(db, document_id)
+    
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+    
+    # Only owner can revoke share links
+    user_role = get_user_role_for_document(db, document_id, current_user.id)
+    if user_role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owner can revoke share links"
+        )
+    
+    success = revoke_share_link(db, document_id, token)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Share link not found"
         )
     
     return None
