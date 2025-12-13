@@ -37,7 +37,7 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+          const response = await api.post('/auth/refresh', {
             refresh_token: refreshToken,
           });
 
@@ -76,7 +76,7 @@ export const authAPI = {
     formData.append('username', credentials.email);
     formData.append('password', credentials.password);
 
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, formData, {
+    const response = await api.post('/auth/login', formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },

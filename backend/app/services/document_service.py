@@ -55,8 +55,10 @@ def get_document_by_id(db: Session, document_id: int) -> Optional[Document]:
 
 
 def get_user_documents(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[Document]:
-    """Get all documents owned by a user"""
-    return db.query(Document).filter(Document.owner_id == user_id).offset(skip).limit(limit).all()
+    """Get all documents accessible to a user (owned or shared)"""
+    return db.query(Document).join(DocumentCollaborator).filter(
+        DocumentCollaborator.user_id == user_id
+    ).order_by(Document.updated_at.desc()).offset(skip).limit(limit).all()
 
 
 def get_all_documents(db: Session, skip: int = 0, limit: int = 100) -> List[Document]:
@@ -223,7 +225,7 @@ def get_share_link_by_token(db: Session, token: str) -> Optional[ShareLink]:
 
 
 def accept_share_link(db: Session, token: str, user_id: int) -> Optional[DocumentCollaborator]:
-    """Accept a share link and add user as collaborator"""
+    """Accept a share link and add user as collaborator or update their role"""
     share_link = get_share_link_by_token(db, token)
     
     if not share_link:
@@ -236,7 +238,19 @@ def accept_share_link(db: Session, token: str, user_id: int) -> Optional[Documen
     ).first()
     
     if existing:
-        raise ValueError("You are already a collaborator on this document")
+        # Don't allow changing owner role
+        if existing.role == "owner":
+            raise ValueError("You are already the owner of this document")
+        
+        # If the new role is different, update it
+        if existing.role != share_link.role:
+            existing.role = share_link.role
+            db.commit()
+            db.refresh(existing)
+            return existing
+        else:
+            # Same role, just return the existing collaborator
+            raise ValueError(f"You are already a {existing.role} on this document")
     
     # Add user as collaborator
     collaborator = DocumentCollaborator(
