@@ -346,18 +346,13 @@ const Home = () => {
               <p className="text-sm text-white/50 mt-2">Create your first document to get started</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[180px]">
-              {documents.slice(0, 5).map((doc, index) => {
-                // First item is large (2x2), others are normal (1x1)
-                const isFirst = index === 0;
-                
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {documents.slice(0, 6).map((doc) => {
                 return (
                   <div 
                     key={doc.id} 
                     onClick={() => handleDocumentClick(doc.id)}
-                    className={`group relative bg-white rounded-xl p-5 shadow-sm hover:shadow-xl transition-all cursor-pointer border border-gray-100 hover:border-gray-200 flex flex-col
-                      ${isFirst ? 'md:col-span-2 md:row-span-2 bg-gradient-to-br from-white to-gray-50' : ''}
-                    `}
+                    className="group relative bg-white rounded-lg p-4 hover:shadow-md transition-all cursor-pointer border border-gray-200 hover:border-gray-400"
                   >
                     {/* Share Icon, Options Menu and Owner Badge - Top Right */}
                     <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
@@ -428,12 +423,12 @@ const Home = () => {
                         )}
                       </div>
 
-                      <span className={`px-2.5 py-1 rounded-lg font-medium text-xs border ${
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                         doc.owner_id === user.id
-                          ? 'bg-gray-100 text-gray-600 border-gray-200'
+                          ? 'bg-gray-100 text-gray-600'
                           : doc.userRole === 'editor'
-                          ? 'bg-green-50 text-green-600 border-green-100'
-                          : 'bg-blue-50 text-blue-600 border-blue-100'
+                          ? 'bg-gray-100 text-gray-700'
+                          : 'bg-gray-100 text-gray-600'
                       }`}>
                         {doc.owner_id === user.id 
                           ? 'Owner' 
@@ -445,45 +440,21 @@ const Home = () => {
                     </div>
 
                     {/* Document Icon and Title */}
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className={`p-2.5 rounded-lg ${isFirst ? 'bg-cyan-50 text-cyan-600' : 'bg-gray-50 text-gray-500'}`}>
-                        <svg className={`${isFirst ? 'w-8 h-8' : 'w-6 h-6'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded bg-gray-100">
+                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
-                      <div className="flex-1 min-w-0 pt-1">
-                        <h3 className={`font-bold text-gray-800 truncate ${isFirst ? 'text-xl' : 'text-sm'}`}>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 truncate text-sm mb-1">
                           {doc.title}
                         </h3>
-                        {isFirst && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            Last edited {new Date(doc.updated_at).toLocaleDateString()}
-                          </p>
-                        )}
+                        <p className="text-xs text-gray-500">
+                          {new Date(doc.updated_at).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
-
-                    {/* Content Preview - First document only */}
-                    {isFirst && (
-                      <div className="flex-1 overflow-hidden mb-3">
-                        {doc.content ? (
-                          <p className="text-sm text-gray-600 line-clamp-4 leading-relaxed">
-                            {doc.content}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-gray-400 italic">No content yet</p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Footer */}
-                    {!isFirst && (
-                      <div className="mt-auto pt-3 border-t border-gray-50 flex justify-between items-center">
-                        <span className="text-xs text-gray-400">
-                          {new Date(doc.updated_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 );
               })}

@@ -246,19 +246,13 @@ const DocumentsList = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-              {filteredDocuments.map((doc, index) => {
-                // Create bento grid pattern with varying sizes
-                const isLarge = index % 7 === 0 || index % 11 === 0;
-                const isMedium = index % 5 === 0;
-                
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {filteredDocuments.map((doc) => {
                 return (
                   <div
                     key={doc.id}
                     onClick={() => handleDocumentClick(doc.id)}
-                    className={`bg-white rounded-lg p-3 border border-gray-200 hover:border-gray-800 hover:shadow-lg transition-all cursor-pointer group relative ${
-                      isLarge ? 'md:col-span-2 md:row-span-2' : isMedium ? 'md:col-span-2' : ''
-                    }`}
+                    className="bg-white rounded-lg p-4 border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer group relative"
                   >
                     {/* Share Icon, Options Menu and Owner Badge - Top Right */}
                     <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
@@ -329,12 +323,12 @@ const DocumentsList = () => {
                         )}
                       </div>
 
-                      <span className={`px-2 py-1 rounded-md font-semibold text-xs ${
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                         doc.owner_id === user.id
-                          ? 'bg-gray-100 text-gray-700'
+                          ? 'bg-gray-100 text-gray-600'
                           : doc.userRole === 'editor'
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-blue-50 text-blue-700'
+                          ? 'bg-gray-100 text-gray-700'
+                          : 'bg-gray-100 text-gray-600'
                       }`}>
                         {doc.owner_id === user.id 
                           ? 'Owner' 
@@ -345,22 +339,22 @@ const DocumentsList = () => {
                       </span>
                     </div>
 
-                    {/* Document Icon */}
-                    <div className={`${isLarge ? 'w-12 h-12' : 'w-8 h-8'} bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center mb-2`}>
-                      <svg className={`${isLarge ? 'w-6 h-6' : 'w-4 h-4'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+                    {/* Document Icon and Title */}
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded bg-gray-100">
+                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 truncate text-sm mb-1">
+                          {doc.title}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {new Date(doc.updated_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-
-                    {/* Document Title */}
-                    <h3 className={`${isLarge ? 'text-base' : 'text-xs'} font-bold text-gray-800 mb-1 group-hover:text-gray-900 line-clamp-2 pr-16`}>
-                      {doc.title}
-                    </h3>
-
-                    {/* Date */}
-                    <span className="text-xs text-gray-400">
-                      {new Date(doc.updated_at).toLocaleDateString()}
-                    </span>
                   </div>
                 );
               })}
