@@ -152,7 +152,7 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-800 to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-800 to-gray-900 ">
       {/* Navigation Bar */}
       <nav className="bg-gray-50 shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-8">
@@ -230,57 +230,6 @@ const Home = () => {
           <p className="text-xl text-white/70">
             Start creating and collaborating on documents with your team
           </p>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-gray-50 rounded-2xl p-6 shadow-md border border-white/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-base font-semibold text-gray-500">Total Documents</p>
-                <p className="text-4xl font-extrabold text-gray-800 mt-2">
-                  {loading ? '...' : stats.totalDocuments}
-                </p>
-              </div>
-              <div className="w-14 h-14 bg-gray-700 rounded-xl flex items-center justify-center">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 rounded-2xl p-6 shadow-md border border-white/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-base font-semibold text-gray-500">Collaborations</p>
-                <p className="text-4xl font-extrabold text-gray-800 mt-2">
-                  {loading ? '...' : stats.collaborations}
-                </p>
-              </div>
-              <div className="w-14 h-14 bg-gray-700 rounded-xl flex items-center justify-center">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 rounded-2xl p-6 shadow-md border border-white/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-base font-semibold text-gray-500">Shared Links</p>
-                <p className="text-4xl font-extrabold text-gray-800 mt-2">
-                  {loading ? '...' : stats.sharedLinks}
-                </p>
-              </div>
-              <div className="w-14 h-14 bg-gray-700 rounded-xl flex items-center justify-center">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                </svg>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Action Cards */}

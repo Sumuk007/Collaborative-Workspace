@@ -5,7 +5,7 @@ import { documentsAPI } from '../services/api';
 
 const DocumentEditor = () => {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   
   const [document, setDocument] = useState(null);
@@ -16,6 +16,7 @@ const DocumentEditor = () => {
   const [error, setError] = useState('');
   const [lastSaved, setLastSaved] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     fetchDocument();
@@ -68,6 +69,11 @@ const DocumentEditor = () => {
 
   const handleBack = () => {
     navigate('/');
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
   const handleDelete = async () => {
@@ -128,26 +134,18 @@ const DocumentEditor = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 to-gray-900">
       {/* Header */}
-      <div className="bg-gray-50 border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+      <nav className="bg-gray-50 shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <span className="text-2xl font-extrabold text-gray-800 tracking-tight">CollabDocs</span>
+            </div>
+
             <div className="flex items-center gap-4">
-              <button
-                onClick={handleBack}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">
-                  {canEdit ? 'Editing' : 'Viewing'}: {document?.title}
-                </h1>
-                {lastSaved && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Last saved: {lastSaved.toLocaleString()}
-                  </p>
+              {lastSaved && (
+                <p className="text-xs text-gray-500">
+                  Last saved: {lastSaved.toLocaleString()}
+                </p>
                 )}
               </div>
             </div>
@@ -168,7 +166,7 @@ const DocumentEditor = () => {
                   disabled={saving}
                   className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg hover:-translate-y-0.5 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Save
+                  {saving ? 'Saving...' : 'Save'}
                 </button>
               )}
               {isOwner && (
@@ -179,13 +177,81 @@ const DocumentEditor = () => {
                   Delete
                 </button>
               )}
+              
+              {/* Profile Dropdown */}
+              <div className="relative ml-2">
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="group relative flex items-center justify-center w-11 h-11 rounded-full bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 hover:shadow-xl transition-all duration-200 ring-2 ring-gray-300"
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  
+                  {/* Tooltip */}
+                  <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-gray-50/80 backdrop-blur-sm text-gray-800 text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 whitespace-nowrap shadow-lg border border-gray-200/50 z-30">
+                    @{user?.username || user?.email?.split('@')[0]}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-[-1px]">
+                      <div className="border-[5px] border-transparent border-b-gray-50/80"></div>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Profile Dropdown */}
+                {showProfileMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setShowProfileMenu(false)}
+                    ></div>
+                    <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="bg-gradient-to-br from-gray-800 to-gray-900 px-5 py-4 text-white">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30">
+                            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-base font-bold truncate">{user?.username}</p>
+                            <p className="text-sm text-gray-200/80 truncate">{user?.email}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="py-2">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full text-left px-5 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-150 flex items-center gap-3 group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                          </div>
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+      </nav>
 
       {/* Editor */}
       <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Back Button */}
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-2 text-white/80 hover:text-white mb-6 transition-colors group"
+        >
+          <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="text-sm font-medium">Back to Home</span>
+        </button>
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-6">
             {error}
