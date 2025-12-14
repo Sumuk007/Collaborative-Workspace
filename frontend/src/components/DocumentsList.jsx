@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { documentsAPI } from '../services/api';
 import ShareDocumentDialog from './ShareDocumentDialog';
+import ViewCollaboratorsDialog from './ViewCollaboratorsDialog';
 
 const DocumentsList = () => {
   const { user, logout } = useAuth();
@@ -16,6 +17,9 @@ const DocumentsList = () => {
   const [creating, setCreating] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [selectedDocForShare, setSelectedDocForShare] = useState(null);
+  const [openOptionsMenu, setOpenOptionsMenu] = useState(null);
+  const [showCollaboratorsDialog, setShowCollaboratorsDialog] = useState(false);
+  const [selectedDocForCollaborators, setSelectedDocForCollaborators] = useState(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -61,6 +65,30 @@ const DocumentsList = () => {
 
   const handleDocumentClick = (docId) => {
     navigate(`/document/${docId}`);
+  };
+
+  const handleViewCollaborators = async (e, doc) => {
+    e.stopPropagation();
+    setOpenOptionsMenu(null);
+    setSelectedDocForCollaborators(doc);
+    setShowCollaboratorsDialog(true);
+  };
+
+  const handleDeleteDocument = async (e, doc) => {
+    e.stopPropagation();
+    setOpenOptionsMenu(null);
+    
+    if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) {
+      return;
+    }
+
+    try {
+      await documentsAPI.delete(doc.id);
+      await fetchDocuments();
+    } catch (err) {
+      console.error('Failed to delete document:', err);
+      setError('Failed to delete document. Please try again.');
+    }
   };
 
   const handleCreateDocument = () => {
@@ -232,8 +260,8 @@ const DocumentsList = () => {
                       isLarge ? 'md:col-span-2 md:row-span-2' : isMedium ? 'md:col-span-2' : ''
                     }`}
                   >
-                    {/* Share Icon and Owner Badge - Top Right */}
-                    <div className="absolute top-2 right-2 flex items-center gap-1">
+                    {/* Share Icon, Options Menu and Owner Badge - Top Right */}
+                    <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
                       {doc.owner_id === user.id && (
                         <button
                           onClick={(e) => {
@@ -249,6 +277,58 @@ const DocumentsList = () => {
                           </svg>
                         </button>
                       )}
+                      
+                      {/* 3-dot Options Menu */}
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenOptionsMenu(openOptionsMenu === doc.id ? null : doc.id);
+                          }}
+                          className="p-1 rounded border border-gray-300 hover:bg-gray-100 transition-colors"
+                          title="Options"
+                        >
+                          <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                          </svg>
+                        </button>
+
+                        {/* Options Dropdown */}
+                        {openOptionsMenu === doc.id && (
+                          <>
+                            <div 
+                              className="fixed inset-0" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenOptionsMenu(null);
+                              }}
+                            ></div>
+                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
+                              <button
+                                onClick={(e) => handleViewCollaborators(e, doc)}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                View Collaborators
+                              </button>
+                              {doc.owner_id === user.id && (
+                                <button
+                                  onClick={(e) => handleDeleteDocument(e, doc)}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  Delete Document
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+
                       <span className={`px-2 py-1 rounded-md font-semibold text-xs ${
                         doc.owner_id === user.id
                           ? 'bg-gray-100 text-gray-700'
@@ -283,7 +363,6 @@ const DocumentsList = () => {
                     </span>
                   </div>
                 );
-              })}
               })}
             </div>
           )}
@@ -362,6 +441,17 @@ const DocumentsList = () => {
         doc={selectedDocForShare}
         onShareSuccess={fetchDocuments}
       />
+
+      {/* View Collaborators Dialog */}
+      {showCollaboratorsDialog && selectedDocForCollaborators && (
+        <ViewCollaboratorsDialog
+          document={selectedDocForCollaborators}
+          onClose={() => {
+            setShowCollaboratorsDialog(false);
+            setSelectedDocForCollaborators(null);
+          }}
+        />
+      )}
     </div>
   );
 };

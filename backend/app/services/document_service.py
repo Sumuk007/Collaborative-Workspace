@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models.document import Document
 from app.models.user import User
 from app.models.document_collaborator import DocumentCollaborator
@@ -180,8 +180,10 @@ def remove_collaborator(db: Session, document_id: int, user_id: int) -> bool:
 
 
 def get_document_collaborators(db: Session, document_id: int) -> List[DocumentCollaborator]:
-    """Get all collaborators for a document"""
-    return db.query(DocumentCollaborator).filter(
+    """Get all collaborators for a document with user information"""
+    return db.query(DocumentCollaborator).options(
+        joinedload(DocumentCollaborator.user)
+    ).filter(
         DocumentCollaborator.document_id == document_id
     ).all()
 

@@ -247,7 +247,21 @@ def list_document_collaborators(
         )
     
     collaborators = get_document_collaborators(db, document_id)
-    return collaborators
+    
+    # Add user information to each collaborator
+    result = []
+    for collab in collaborators:
+        collab_dict = {
+            "id": collab.id,
+            "document_id": collab.document_id,
+            "user_id": collab.user_id,
+            "role": collab.role,
+            "username": collab.user.username if collab.user else None,
+            "email": collab.user.email if collab.user else None
+        }
+        result.append(collab_dict)
+    
+    return result
 
 
 @router.post("/{document_id}/collaborators", response_model=CollaboratorOut, status_code=status.HTTP_201_CREATED)

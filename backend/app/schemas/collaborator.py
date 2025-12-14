@@ -18,6 +18,8 @@ class CollaboratorOut(BaseModel):
     document_id: int
     user_id: int
     role: str
+    username: Optional[str] = None
+    email: Optional[str] = None
     
     class Config:
         from_attributes = True

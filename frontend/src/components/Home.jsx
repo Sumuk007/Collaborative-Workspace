@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { documentsAPI } from '../services/api';
 import ShareDocumentDialog from './ShareDocumentDialog';
+import ViewCollaboratorsDialog from './ViewCollaboratorsDialog';
 
 const Home = () => {
   const { user, logout } = useAuth();
@@ -20,6 +21,10 @@ const Home = () => {
   const [creating, setCreating] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [selectedDocForShare, setSelectedDocForShare] = useState(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [openOptionsMenu, setOpenOptionsMenu] = useState(null);
+  const [showCollaboratorsDialog, setShowCollaboratorsDialog] = useState(false);
+  const [selectedDocForCollaborators, setSelectedDocForCollaborators] = useState(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -122,6 +127,30 @@ const Home = () => {
     navigate(`/document/${docId}`);
   };
 
+  const handleViewCollaborators = async (e, doc) => {
+    e.stopPropagation();
+    setOpenOptionsMenu(null);
+    setSelectedDocForCollaborators(doc);
+    setShowCollaboratorsDialog(true);
+  };
+
+  const handleDeleteDocument = async (e, doc) => {
+    e.stopPropagation();
+    setOpenOptionsMenu(null);
+    
+    if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) {
+      return;
+    }
+
+    try {
+      await documentsAPI.delete(doc.id);
+      await fetchDocuments();
+    } catch (err) {
+      console.error('Failed to delete document:', err);
+      setError('Failed to delete document. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 to-gray-900">
       {/* Navigation Bar */}
@@ -132,16 +161,61 @@ const Home = () => {
               <span className="text-2xl font-extrabold text-gray-800 tracking-tight">CollabDocs</span>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="text-base text-gray-700">
-                Welcome, <span className="font-semibold">{user?.name}</span>
-              </div>
+            <div className="relative">
               <button
-                onClick={handleLogout}
-                className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all"
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="group relative flex items-center justify-center w-11 h-11 rounded-full bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 hover:shadow-xl transition-all duration-200 ring-2 ring-gray-300"
               >
-                Logout
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                
+                {/* Tooltip - Below the icon */}
+                <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-gray-50/80 backdrop-blur-sm text-gray-800 text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 whitespace-nowrap shadow-lg border border-gray-200/50 z-30">
+                  @{user?.username || user?.email?.split('@')[0]}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-[-1px]">
+                    <div className="border-[5px] border-transparent border-b-gray-50/80"></div>
+                  </div>
+                </div>
               </button>
+
+              {/* Profile Dropdown */}
+              {showProfileMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setShowProfileMenu(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="bg-gradient-to-br from-gray-800 to-gray-900 px-5 py-4 text-white">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30">
+                          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-bold truncate">{user?.name}</p>
+                          <p className="text-sm text-gray-200/80 truncate">{user?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="py-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-5 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-150 flex items-center gap-3 group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                        </div>
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -285,7 +359,7 @@ const Home = () => {
                       ${isFirst ? 'md:col-span-2 md:row-span-2 bg-gradient-to-br from-white to-gray-50' : ''}
                     `}
                   >
-                    {/* Share Icon and Owner Badge - Top Right */}
+                    {/* Share Icon, Options Menu and Owner Badge - Top Right */}
                     <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
                       {doc.owner_id === user.id && (
                         <button
@@ -302,6 +376,58 @@ const Home = () => {
                           </svg>
                         </button>
                       )}
+                      
+                      {/* 3-dot Options Menu */}
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenOptionsMenu(openOptionsMenu === doc.id ? null : doc.id);
+                          }}
+                          className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-all shadow-sm"
+                          title="Options"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                          </svg>
+                        </button>
+
+                        {/* Options Dropdown */}
+                        {openOptionsMenu === doc.id && (
+                          <>
+                            <div 
+                              className="fixed inset-0" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenOptionsMenu(null);
+                              }}
+                            ></div>
+                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
+                              <button
+                                onClick={(e) => handleViewCollaborators(e, doc)}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                                View Collaborators
+                              </button>
+                              {doc.owner_id === user.id && (
+                                <button
+                                  onClick={(e) => handleDeleteDocument(e, doc)}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  Delete Document
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+
                       <span className={`px-2.5 py-1 rounded-lg font-medium text-xs border ${
                         doc.owner_id === user.id
                           ? 'bg-gray-100 text-gray-600 border-gray-200'
@@ -431,6 +557,17 @@ const Home = () => {
         doc={selectedDocForShare}
         onShareSuccess={fetchDocuments}
       />
+
+      {/* View Collaborators Dialog */}
+      {showCollaboratorsDialog && selectedDocForCollaborators && (
+        <ViewCollaboratorsDialog
+          document={selectedDocForCollaborators}
+          onClose={() => {
+            setShowCollaboratorsDialog(false);
+            setSelectedDocForCollaborators(null);
+          }}
+        />
+      )}
     </div>
   );
 };
