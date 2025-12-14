@@ -61,104 +61,148 @@ function ShareLinkAccept() {
     acceptLink();
   }, [token, user, navigate]);
 
+  // Shared Layout Wrapper
+  const LayoutWrapper = ({ children }) => (
+    <div className="min-h-screen bg-white text-black font-sans selection:bg-black selection:text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Texture */}
+      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 
+           style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+      </div>
+      
+      {/* Brand Watermark */}
+      <div className="absolute top-8 left-8 flex items-center gap-3 opacity-50">
+        <div className="w-6 h-6 bg-black flex items-center justify-center">
+            <div className="w-2 h-2 bg-white"></div>
+        </div>
+        <span className="text-lg font-black tracking-tighter uppercase">CollabDocs_</span>
+      </div>
+
+      <div className="relative z-10 w-full max-w-md animate-in fade-in zoom-in-95 duration-300">
+        {children}
+      </div>
+    </div>
+  );
+
+  // Common Card Style
+  const Card = ({ children, title, subtitle }) => (
+    <div className="bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8">
+      {(title || subtitle) && (
+        <div className="mb-8 border-b-2 border-black pb-4">
+          {title && <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">{title}</h2>}
+          {subtitle && <p className="font-mono text-xs text-gray-500 uppercase tracking-widest">{subtitle}</p>}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+
   if (loading && user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Accepting Invitation</h2>
-          <p className="text-gray-600">Please wait while we add you to the document...</p>
-        </div>
-      </div>
+      <LayoutWrapper>
+        <Card>
+          <div className="flex flex-col items-center py-8">
+            <div className="w-16 h-16 border-4 border-black border-t-transparent rounded-full animate-spin mb-6"></div>
+            <h2 className="text-xl font-bold uppercase tracking-tight mb-2">Verifying Token</h2>
+            <p className="font-mono text-xs text-gray-500">ESTABLISHING CONNECTION...</p>
+          </div>
+        </Card>
+      </LayoutWrapper>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
-          <div className="text-center mb-6">
-            <svg className="w-16 h-16 text-cyan-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Document Invitation</h2>
-            <p className="text-gray-600">You've been invited to collaborate on a document!</p>
+      <LayoutWrapper>
+        <Card title="Invitation" subtitle="Authentication Required">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 border-2 border-black bg-gray-50 flex items-center justify-center mx-auto mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              </svg>
+            </div>
+            <p className="text-gray-600 font-medium">
+              You've been invited to collaborate on a secure document.
+            </p>
           </div>
 
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  Please login or register to accept this invitation
-                </p>
-              </div>
+          <div className="bg-gray-50 border-2 border-black p-4 mb-8">
+            <div className="flex gap-3">
+              <div className="text-xl font-bold">!</div>
+              <p className="text-xs font-mono font-bold leading-relaxed pt-1">
+                ACCESS RESTRICTED: PLEASE IDENTIFY YOURSELF TO PROCEED.
+              </p>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             <button
               onClick={() => navigate('/login')}
-              className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white py-3 px-4 rounded-lg font-semibold hover:from-cyan-500 hover:to-blue-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full py-4 bg-black text-white font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-white hover:text-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:shadow-none"
             >
               Login to Accept
             </button>
             <button
               onClick={() => navigate('/register')}
-              className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+              className="w-full py-4 bg-white text-black font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-gray-50 transition-all"
             >
               Create Account
             </button>
           </div>
-
-          <p className="text-center text-sm text-gray-500 mt-6">
-            After logging in, you'll automatically be added to the shared document
-          </p>
-        </div>
-      </div>
+          
+          <div className="mt-6 text-center border-t border-gray-100 pt-4">
+            <p className="font-mono text-[10px] text-gray-400">SESSION ID: {token?.substring(0, 8).toUpperCase()}...</p>
+          </div>
+        </Card>
+      </LayoutWrapper>
     );
   }
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+      <LayoutWrapper>
+        <Card>
+          <div className="text-center py-6">
+            <div className="w-20 h-20 bg-black text-white flex items-center justify-center mx-auto mb-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)]">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-black uppercase tracking-tight mb-2">Access Granted</h2>
+            <p className="text-sm font-bold text-gray-600 mb-6">You are now a collaborator.</p>
+            
+            <div className="inline-block px-4 py-2 border border-black bg-gray-50">
+              <p className="font-mono text-xs animate-pulse">REDIRECTING_TO_WORKSPACE...</p>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Success!</h2>
-          <p className="text-gray-600 mb-4">You've been added as a collaborator.</p>
-          <p className="text-sm text-gray-500">Redirecting to your documents...</p>
-        </div>
-      </div>
+        </Card>
+      </LayoutWrapper>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+      <LayoutWrapper>
+        <Card title="Error" subtitle="400 Bad Request">
+          <div className="text-center py-4">
+             <div className="w-16 h-16 border-2 border-red-600 bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            
+            <p className="text-lg font-bold text-black mb-8 leading-tight">
+              {error}
+            </p>
+            
+            <button
+              onClick={() => navigate('/')}
+              className="w-full py-3 bg-white text-black font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-black hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px]"
+            >
+              Return to Dashboard
+            </button>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white py-3 px-6 rounded-lg font-semibold hover:from-cyan-500 hover:to-blue-600 transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            Go to Home
-          </button>
-        </div>
-      </div>
+        </Card>
+      </LayoutWrapper>
     );
   }
 

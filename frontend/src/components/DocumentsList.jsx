@@ -22,6 +22,11 @@ const DocumentsList = () => {
   const [selectedDocForCollaborators, setSelectedDocForCollaborators] = useState(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -32,7 +37,6 @@ const DocumentsList = () => {
       setError('');
       const docs = await documentsAPI.getAll(0, 100);
       
-      // Fetch roles for each document
       const docsWithRoles = await Promise.all(
         docs.map(async (doc) => {
           try {
@@ -132,275 +136,227 @@ const DocumentsList = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-800 to-gray-900">
+    <div className="min-h-screen bg-white text-black font-sans selection:bg-black selection:text-white flex flex-col">
+       {/* Background Texture */}
+       <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none" 
+           style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+      </div>
+
       {/* Navigation Bar */}
-      <nav className="bg-gray-50 shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <span className="text-2xl font-extrabold text-gray-800 tracking-tight">CollabDocs</span>
+      <nav className="border-b-2 border-black sticky top-0 bg-white z-40">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-black flex items-center justify-center">
+              <div className="w-3 h-3 bg-white"></div>
             </div>
+            <span className="text-xl font-black tracking-tighter uppercase">CollabDocs_</span>
+          </div>
 
-            <div className="relative">
-              <button
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="group relative flex items-center justify-center w-11 h-11 rounded-full bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 hover:shadow-xl transition-all duration-200 ring-2 ring-gray-300"
-              >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                
-                {/* Tooltip - Below the icon */}
-                <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-gray-50/80 backdrop-blur-sm text-gray-800 text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 whitespace-nowrap shadow-lg border border-gray-200/50 z-30">
-                  @{user?.username || user?.email?.split('@')[0]}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-[-1px]">
-                    <div className="border-[5px] border-transparent border-b-gray-50/80"></div>
+          <div className="relative">
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="group flex items-center gap-4 pl-4 py-1 pr-1 cursor-pointer"
+            >
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-bold uppercase tracking-wide leading-none">{user?.name}</p>
+                <p className="text-[10px] text-gray-500 font-mono mt-1">ID: {user?.username || 'USER_01'}</p>
+              </div>
+              <div className="w-10 h-10 border-2 border-black flex items-center justify-center bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:bg-black group-hover:text-white transition-all">
+                 <span className="font-bold font-mono text-lg">{user?.name?.charAt(0).toUpperCase()}</span>
+              </div>
+            </button>
+
+            {/* Profile Menu Dropdown */}
+            {showProfileMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowProfileMenu(false)}></div>
+                <div className="absolute right-0 mt-3 w-64 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-20">
+                  <div className="p-4 border-b-2 border-black bg-gray-50">
+                    <p className="font-bold text-sm">Currently signed in as:</p>
+                    <p className="font-mono text-xs truncate mt-1">{user?.email}</p>
                   </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-3 text-sm font-bold hover:bg-black hover:text-white transition-colors flex items-center justify-between group"
+                  >
+                    <span>Log Out</span>
+                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </button>
                 </div>
-              </button>
-
-              {/* Profile Dropdown */}
-              {showProfileMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-10" 
-                    onClick={() => setShowProfileMenu(false)}
-                  ></div>
-                  <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="bg-gradient-to-br from-gray-800 to-gray-900 px-5 py-4 text-white">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30">
-                          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-base font-bold truncate">{user?.username}</p>
-                          <p className="text-sm text-gray-200/80 truncate">{user?.email}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="py-2">
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left px-5 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-150 flex items-center gap-3 group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                          </svg>
-                        </div>
-                        <span>Logout</span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-8 py-12">
+      <main className="max-w-7xl mx-auto px-6 py-12 flex-grow w-full z-10 relative">
         {/* Back Button */}
         <button
           onClick={handleBack}
-          className="flex items-center gap-2 text-white/80 hover:text-white mb-6 transition-colors group"
+          className="flex items-center gap-2 mb-8 group"
         >
-          <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span className="text-sm font-medium">Back to Home</span>
+          <div className="w-8 h-8 border-2 border-black flex items-center justify-center bg-white group-hover:bg-black group-hover:text-white transition-all">
+             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M15 19l-7-7 7-7" />
+             </svg>
+          </div>
+          <span className="text-sm font-bold uppercase tracking-widest">Return Home</span>
         </button>
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-extrabold text-white mb-2 tracking-tight">
-            All Documents
+        <div className="mb-12 border-b-2 border-black pb-8">
+          <h1 className="text-6xl font-black uppercase tracking-tighter mb-2">
+            Archive<br/>Registry
           </h1>
-          <p className="text-xl text-white/70">
-            Browse and manage all your documents
+          <p className="font-mono text-sm text-gray-500 uppercase tracking-widest">
+            Full database access and management
           </p>
         </div>
 
         {/* Search and Actions Bar */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="flex flex-col md:flex-row gap-6 mb-12">
           <div className="flex-1 relative">
-            <div className="relative bg-white/10 backdrop-blur-md rounded-xl border border-white/20 shadow-lg">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+             <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="SEARCH DATABASE..."
+              className="w-full h-14 pl-4 pr-12 bg-white border-2 border-black text-black font-bold placeholder:text-gray-400 placeholder:font-mono focus:outline-none focus:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
+            />
+            {searchQuery ? (
+               <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 hover:text-red-600"
+              >
+                ✕
+              </button>
+            ) : (
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search documents..."
-                className="w-full px-12 py-3.5 text-sm bg-transparent text-white placeholder-white/50 outline-none"
-              />
-
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                >
-                  <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
+            )}
           </div>
 
           <button
             onClick={handleCreateDocument}
-            className="px-6 py-3.5 text-sm font-semibold text-white bg-white/10 backdrop-blur-md rounded-xl border border-white/20 shadow-lg hover:bg-white/15 transition-colors flex items-center justify-center gap-2"
+            className="h-14 px-8 bg-black text-white font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-white hover:text-black hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none whitespace-nowrap"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New Document
+            + Create New
           </button>
         </div>
 
         {/* Documents Grid */}
         <div>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3.5 rounded-xl text-sm mb-6">
-              {error}
+            <div className="bg-red-50 border-2 border-red-600 p-4 mb-8 flex items-center gap-3">
+              <span className="font-bold text-red-600">ERROR:</span>
+              <span className="font-mono text-sm text-red-700">{error}</span>
             </div>
           )}
 
           {loading ? (
-            <div className="text-center py-12">
-              <svg className="animate-spin h-12 w-12 text-gray-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <p className="text-base text-gray-500 mt-4">Loading documents...</p>
+            <div className="flex flex-col items-center justify-center py-24 opacity-50">
+              <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mb-4"></div>
+              <p className="font-mono text-sm uppercase">Accessing Records...</p>
             </div>
           ) : filteredDocuments.length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <p className="text-base text-gray-500">
-                {searchQuery ? 'No documents found matching your search' : 'No documents yet'}
+            <div className="border-2 border-dashed border-gray-300 p-16 text-center">
+              <div className="w-16 h-16 bg-gray-100 mx-auto mb-4 flex items-center justify-center rounded-full border border-gray-300">
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <p className="text-lg font-bold uppercase mb-2">
+                {searchQuery ? 'Search yielded no results' : 'Registry Empty'}
               </p>
-              <p className="text-sm text-gray-400 mt-2">
-                {searchQuery ? 'Try a different search term' : 'Create your first document to get started'}
+              <p className="text-sm text-gray-500 font-mono">
+                {searchQuery ? 'Refine your query parameters.' : 'Initialize a new document to begin.'}
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredDocuments.map((doc) => {
                 return (
                   <div
                     key={doc.id}
                     onClick={() => handleDocumentClick(doc.id)}
-                    className="bg-white rounded-lg p-4 border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer group relative"
+                    className="group relative bg-white border-2 border-black hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:-translate-x-1"
                   >
-                    {/* Share Icon, Options Menu and Owner Badge - Top Right */}
-                    <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
-                      {doc.owner_id === user.id && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDocForShare(doc);
-                            setShowShareDialog(true);
-                          }}
-                          className="p-1 rounded border border-gray-300 hover:bg-gray-100 transition-colors"
-                          title="Share document"
-                        >
-                          <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                          </svg>
-                        </button>
-                      )}
-                      
-                      {/* 3-dot Options Menu */}
-                      <div className="relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenOptionsMenu(openOptionsMenu === doc.id ? null : doc.id);
-                          }}
-                          className="p-1 rounded border border-gray-300 hover:bg-gray-100 transition-colors"
-                          title="Options"
-                        >
-                          <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                          </svg>
-                        </button>
+                    {/* Card Header: Actions & Role */}
+                    <div className="flex justify-between items-start p-4 border-b-2 border-black bg-gray-50">
+                        <span className={`text-[10px] font-bold uppercase px-2 py-1 border border-black ${
+                          doc.owner_id === user.id ? 'bg-black text-white' : 'bg-white text-black'
+                        }`}>
+                           {doc.owner_id === user.id ? 'OWNER' : (doc.userRole || 'SHARED')}
+                        </span>
 
-                        {/* Options Dropdown */}
-                        {openOptionsMenu === doc.id && (
-                          <>
-                            <div 
-                              className="fixed inset-0" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenOptionsMenu(null);
-                              }}
-                            ></div>
-                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
-                              <button
-                                onClick={(e) => handleViewCollaborators(e, doc)}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                </svg>
-                                View Collaborators
-                              </button>
-                              {doc.owner_id === user.id && (
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 z-10">
+                            {doc.owner_id === user.id && (
                                 <button
-                                  onClick={(e) => handleDeleteDocument(e, doc)}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedDocForShare(doc);
+                                    setShowShareDialog(true);
+                                  }}
+                                  className="p-1 hover:bg-black hover:text-white transition-colors"
+                                  title="Share"
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                                   </svg>
-                                  Delete Document
                                 </button>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
+                            )}
 
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        doc.owner_id === user.id
-                          ? 'bg-gray-100 text-gray-600'
-                          : doc.userRole === 'editor'
-                          ? 'bg-gray-100 text-gray-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {doc.owner_id === user.id 
-                          ? 'Owner' 
-                          : doc.userRole 
-                          ? doc.userRole.charAt(0).toUpperCase() + doc.userRole.slice(1)
-                          : 'Shared'
-                        }
-                      </span>
+                            <div className="relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenOptionsMenu(openOptionsMenu === doc.id ? null : doc.id);
+                                  }}
+                                  className={`p-1 transition-colors ${openOptionsMenu === doc.id ? 'bg-black text-white' : 'hover:bg-black hover:text-white'}`}
+                                >
+                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                   </svg>
+                                </button>
+
+                                {openOptionsMenu === doc.id && (
+                                  <div className="absolute right-0 mt-2 w-40 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-20">
+                                     <button
+                                      onClick={(e) => handleViewCollaborators(e, doc)}
+                                      className="w-full text-left px-4 py-2 text-xs font-bold uppercase hover:bg-black hover:text-white border-b border-gray-100 transition-colors"
+                                    >
+                                      Collaborators
+                                    </button>
+                                    {doc.owner_id === user.id && (
+                                      <button
+                                        onClick={(e) => handleDeleteDocument(e, doc)}
+                                        className="w-full text-left px-4 py-2 text-xs font-bold uppercase text-red-600 hover:bg-red-600 hover:text-white transition-colors"
+                                      >
+                                        Delete
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Document Icon and Title */}
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded bg-gray-100">
-                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 truncate text-sm mb-1">
-                          {doc.title}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          {new Date(doc.updated_at).toLocaleDateString()}
+                    {/* Card Body */}
+                    <div className="p-5">
+                      <h3 className="text-xl font-bold leading-tight mb-4 line-clamp-2 min-h-[3.5rem]">
+                        {doc.title}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <p className="text-xs font-mono text-gray-500">
+                          UPDATED: {new Date(doc.updated_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -412,28 +368,67 @@ const DocumentsList = () => {
 
           {/* Results Count */}
           {!loading && filteredDocuments.length > 0 && (
-            <div className="mt-6 text-center text-sm text-gray-500">
-              Showing {filteredDocuments.length} of {documents.length} document{documents.length !== 1 ? 's' : ''}
+            <div className="mt-12 pt-8 border-t-2 border-gray-100 text-center">
+              <span className="font-mono text-xs text-gray-500 uppercase tracking-widest bg-gray-100 px-3 py-1 rounded">
+                Index Count: {filteredDocuments.length} / {documents.length}
+              </span>
             </div>
           )}
         </div>
-      </div>
+      </main>
+
+       {/* Footer */}
+       <footer className="bg-black text-white mt-auto z-10 relative">
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 border-b border-white/20 pb-16">
+            <div className="md:col-span-2">
+              <h4 className="text-3xl font-black uppercase tracking-tighter mb-6">CollabDocs_</h4>
+              <p className="text-gray-400 max-w-sm text-sm leading-relaxed">
+                A minimal, high-performance document collaboration platform designed for teams who value clarity over clutter. Built for the modern web.
+              </p>
+            </div>
+            
+            <div>
+              <h5 className="font-mono text-xs text-gray-500 uppercase tracking-widest mb-6">Platform</h5>
+              <ul className="space-y-4 text-sm font-bold">
+                <li><a href="#" className="hover:text-gray-400 transition-colors">Overview</a></li>
+                <li><a href="#" className="hover:text-gray-400 transition-colors">Documentation</a></li>
+                <li><a href="#" className="hover:text-gray-400 transition-colors">API Status</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h5 className="font-mono text-xs text-gray-500 uppercase tracking-widest mb-6">Legal</h5>
+              <ul className="space-y-4 text-sm font-bold">
+                <li><a href="#" className="hover:text-gray-400 transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-gray-400 transition-colors">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-gray-400 transition-colors">Security</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6 font-mono text-xs text-gray-500">
+            <p>© {new Date().getFullYear()} COLLABDOCS INC. ALL RIGHTS RESERVED.</p>
+          </div>
+        </div>
+      </footer>
 
       {/* Create Document Dialog */}
       {showCreateDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Create New Document</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm" onClick={handleCancelCreate}></div>
+          <div className="relative bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg p-8 animate-in fade-in zoom-in-95 duration-200">
+            <h2 className="text-3xl font-black mb-8 uppercase tracking-tight">New Document</h2>
             
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
+              <div className="bg-red-50 text-red-600 p-3 mb-6 text-sm font-bold border border-red-200">
                 {error}
               </div>
             )}
 
-            <div className="mb-6">
-              <label htmlFor="docTitle" className="block text-sm font-semibold text-gray-700 mb-2">
-                Document Title
+            <div className="mb-8">
+              <label htmlFor="docTitle" className="block text-xs font-bold uppercase tracking-widest mb-2">
+                Title
               </label>
               <input
                 id="docTitle"
@@ -441,32 +436,29 @@ const DocumentsList = () => {
                 value={newDocTitle}
                 onChange={(e) => setNewDocTitle(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleConfirmCreate()}
-                placeholder="Enter document title..."
+                placeholder="Project Name..."
                 autoFocus
-                className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:border-gray-700 focus:ring-4 focus:ring-gray-700/10 focus:outline-none transition-all"
+                className="w-full bg-gray-50 border-2 border-gray-200 p-4 font-bold focus:border-black focus:outline-none focus:ring-0 transition-colors text-lg placeholder:font-normal"
               />
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 onClick={handleCancelCreate}
                 disabled={creating}
-                className="flex-1 px-4 py-3 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-4 font-bold border-2 border-transparent hover:border-black transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmCreate}
                 disabled={creating || !newDocTitle.trim()}
-                className="flex-1 px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg hover:-translate-y-0.5 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center"
+                className="flex-1 py-4 bg-black text-white font-bold border-2 border-black hover:bg-white hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
               >
                 {creating ? (
-                  <svg className="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  'Create'
+                  'CREATE'
                 )}
               </button>
             </div>
