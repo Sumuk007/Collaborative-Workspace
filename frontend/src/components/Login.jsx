@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
@@ -8,9 +8,19 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the message from location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,6 +71,13 @@ const Login = () => {
             <p className="font-mono text-xs text-gray-500 uppercase tracking-widest">Enter credentials to access workspace.</p>
           </div>
 
+          {successMessage && (
+            <div className="bg-green-50 border-2 border-green-600 p-4 mb-8 flex items-start gap-3">
+              <span className="text-green-600 font-bold text-lg leading-none">✓</span>
+              <span className="text-green-700 text-sm font-bold font-mono">{successMessage}</span>
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 border-2 border-red-600 p-4 mb-8 flex items-start gap-3">
               <span className="text-red-600 font-bold text-lg leading-none">!</span>
@@ -93,9 +110,9 @@ const Login = () => {
                 <label htmlFor="password" className="block text-xs font-bold uppercase tracking-widest">
                   Password
                 </label>
-                <a href="#" className="text-xs font-bold text-gray-500 hover:text-black underline decoration-1 underline-offset-2 hover:decoration-2">
+                <Link to="/forgot-password" className="text-xs font-bold text-gray-500 hover:text-black underline decoration-1 underline-offset-2 hover:decoration-2">
                   Forgot?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                 <input
