@@ -1,12 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { documentsAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const ViewCollaboratorsDialog = ({ document, onClose }) => {
+  const { user } = useAuth();
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedEmail, setCopiedEmail] = useState(null);
+  const [removingUserId, setRemovingUserId] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [collaboratorToRemove, setCollaboratorToRemove] = useState(null);
 
   useEffect(() => {
     fetchCollaborators();
@@ -40,6 +45,37 @@ const ViewCollaboratorsDialog = ({ document, onClose }) => {
     setCopiedEmail(email);
     setTimeout(() => setCopiedEmail(null), 2000);
   };
+
+  const handleRemoveCollaborator = (userId, username) => {
+    setCollaboratorToRemove({ userId, username });
+    setShowDeleteDialog(true);
+  };
+
+  const confirmRemoveCollaborator = async () => {
+    if (!collaboratorToRemove) return;
+
+    try {
+      setRemovingUserId(collaboratorToRemove.userId);
+      setError('');
+      setShowDeleteDialog(false);
+      await documentsAPI.removeCollaborator(document.id, collaboratorToRemove.userId);
+      // Refresh the collaborators list
+      await fetchCollaborators();
+    } catch (err) {
+      console.error('Failed to remove collaborator:', err);
+      setError('Failed to remove collaborator. Please try again.');
+    } finally {
+      setRemovingUserId(null);
+      setCollaboratorToRemove(null);
+    }
+  };
+
+  const cancelRemoveCollaborator = () => {
+    setShowDeleteDialog(false);
+    setCollaboratorToRemove(null);
+  };
+
+  const isOwner = document?.owner_id === user?.id;
 
   const getInitials = (name) => {
     return name
@@ -191,6 +227,27 @@ const ViewCollaboratorsDialog = ({ document, onClose }) => {
                   <div className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider border-2 ${getRoleBadgeStyle(collaborator.role)} group-hover:bg-white group-hover:text-black group-hover:border-white`}>
                     {collaborator.role}
                   </div>
+
+                  {/* Remove Button (Only for Owner, can't remove self or other owners) */}
+                  {isOwner && collaborator.role !== 'owner' && (
+                    <button
+                      onClick={() => handleRemoveCollaborator(collaborator.user_id, collaborator.username)}
+                      disabled={removingUserId === collaborator.user_id}
+                      className=" p-2 hover:bg-red-600 hover:text-white border-2 border-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Remove Collaborator"
+                    >
+                      {removingUserId === collaborator.user_id ? (
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -216,6 +273,81 @@ const ViewCollaboratorsDialog = ({ document, onClose }) => {
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && collaboratorToRemove && (
+       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  {/* Monochrome Backdrop */}
+  <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" onClick={cancelRemoveCollaborator}></div>
+
+  {/* Modal Window */}
+  <div className="relative bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+    
+    {/* System Header */}
+    <div className="bg-black text-white px-4 py-2 flex justify-between items-center select-none">
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 bg-white animate-pulse"></div>
+        <span className="font-mono text-xs uppercase tracking-widest">system: confirm_removal</span>
+      </div>
+    </div>
+
+    <div className="p-8">
+      {/* Title Section */}
+      <div className="mb-8">
+        <h3 className="text-4xl font-black uppercase tracking-tighter leading-[0.9] mb-2">
+          Revoke<br/>Access?
+        </h3>
+        <p className="font-mono text-xs text-gray-500 uppercase tracking-widest">
+          This action is permanent.
+        </p>
+      </div>
+
+      {/* Target User Card */}
+      <div className="mb-8 border-2 border-black p-4 flex items-center gap-4 bg-gray-50">
+        <div className="w-10 h-10 bg-black text-white flex items-center justify-center font-bold font-mono text-sm shrink-0">
+           {collaboratorToRemove.username?.slice(0, 2).toUpperCase()}
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Target User</p>
+          <p className="font-bold text-lg truncate leading-none">
+            {collaboratorToRemove.username}
+          </p>
+        </div>
+      </div>
+
+      {/* Consequences List */}
+      <div className="mb-8">
+        <ul className="text-xs font-bold space-y-3">
+          <li className="flex items-center gap-3">
+            <div className="w-4 h-4 border border-black flex items-center justify-center text-[10px]">✕</div>
+            <span>User will lose access immediately</span>
+          </li>
+          <li className="flex items-center gap-3">
+            <div className="w-4 h-4 border border-black flex items-center justify-center text-[10px]">✕</div>
+            <span>Removal from collaboration registry</span>
+          </li>
+        </ul>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={confirmRemoveCollaborator}
+          className="w-full py-4 bg-black text-white font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-white hover:text-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
+        >
+          Confirm Removal
+        </button>
+        <button
+          onClick={cancelRemoveCollaborator}
+          className="w-full py-4 bg-white text-black font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-gray-100 transition-all"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+      )}
     </div>
   );
 };

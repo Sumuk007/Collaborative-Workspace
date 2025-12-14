@@ -25,6 +25,8 @@ const Home = () => {
   const [openOptionsMenu, setOpenOptionsMenu] = useState(null);
   const [showCollaboratorsDialog, setShowCollaboratorsDialog] = useState(false);
   const [selectedDocForCollaborators, setSelectedDocForCollaborators] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -122,21 +124,31 @@ const Home = () => {
     setShowCollaboratorsDialog(true);
   };
 
-  const handleDeleteDocument = async (e, doc) => {
+  const handleDeleteDocument = (e, doc) => {
     e.stopPropagation();
     setOpenOptionsMenu(null);
-    
-    if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) {
-      return;
-    }
+    setDocumentToDelete(doc);
+    setShowDeleteDialog(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!documentToDelete) return;
+    
+    setShowDeleteDialog(false);
     try {
-      await documentsAPI.delete(doc.id);
+      await documentsAPI.delete(documentToDelete.id);
       await fetchDocuments();
     } catch (err) {
       console.error('Failed to delete document:', err);
       setError('Failed to delete document. Please try again.');
+    } finally {
+      setDocumentToDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteDialog(false);
+    setDocumentToDelete(null);
   };
 
   return (
@@ -479,6 +491,85 @@ const Home = () => {
             setSelectedDocForCollaborators(null);
           }}
         />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && documentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  {/* Monochrome Backdrop */}
+  <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" onClick={cancelDelete}></div>
+
+  {/* Modal Window */}
+  <div className="relative bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+    
+    {/* System Header */}
+    <div className="bg-black text-white px-4 py-2 flex justify-between items-center select-none">
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-xs uppercase tracking-widest animate-pulse">⚠ SYSTEM: DELETE_PROTOCOL</span>
+      </div>
+    </div>
+
+    <div className="p-8">
+      {/* Title Section */}
+      <div className="mb-8">
+        <h3 className="text-5xl font-black uppercase tracking-tighter leading-[0.85] mb-4">
+          Final<br/>Purge?
+        </h3>
+        <p className="font-mono text-xs text-gray-500 uppercase tracking-widest leading-relaxed">
+          This operation destroys data permanently.
+        </p>
+      </div>
+
+      {/* Target Document Box */}
+      <div className="mb-8 border-2 border-black p-4 bg-gray-50 relative overflow-hidden">
+        {/* Striped texture */}
+        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)', backgroundSize: '10px 10px' }}></div>
+        
+        <div className="relative z-10">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Target Resource</p>
+          <p className="font-bold text-lg text-black truncate leading-none">
+            "{documentToDelete.title}"
+          </p>
+        </div>
+      </div>
+
+      {/* Consequences List */}
+      <div className="mb-8">
+        <ul className="text-xs font-bold space-y-3">
+          <li className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-black text-white flex items-center justify-center text-[10px] font-mono">1</div>
+            <span className="uppercase">Content will be erased</span>
+          </li>
+          <li className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-black text-white flex items-center justify-center text-[10px] font-mono">2</div>
+            <span className="uppercase">Access revoked for all users</span>
+          </li>
+          <li className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-black text-white flex items-center justify-center text-[10px] font-mono">3</div>
+            <span className="uppercase">Links become invalid</span>
+          </li>
+        </ul>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={confirmDelete}
+          className="w-full py-4 bg-black text-white font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-white hover:text-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none group"
+        >
+          <span className="group-hover:hidden">Confirm Deletion</span>
+          <span className="hidden group-hover:inline-block">Execute Delete</span>
+        </button>
+        <button
+          onClick={cancelDelete}
+          className="w-full py-4 bg-white text-black font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-gray-100 transition-all"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
       )}
     </div>
   );

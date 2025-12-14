@@ -22,6 +22,7 @@ const DocumentEditor = () => {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [currentFontSize, setCurrentFontSize] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activeFormats, setActiveFormats] = useState({
     bold: false,
     italic: false,
@@ -301,11 +302,12 @@ const DocumentEditor = () => {
     navigate('/login');
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this document?')) {
-      return;
-    }
+  const handleDelete = () => {
+    setShowDeleteDialog(true);
+  };
 
+  const confirmDelete = async () => {
+    setShowDeleteDialog(false);
     try {
       await documentsAPI.delete(id);
       navigate('/');
@@ -313,6 +315,10 @@ const DocumentEditor = () => {
       console.error('Failed to delete document:', err);
       setError('Failed to delete document. Please try again.');
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteDialog(false);
   };
 
   if (loading) {
@@ -647,6 +653,85 @@ const DocumentEditor = () => {
            </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  {/* Monochrome Backdrop */}
+  <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" onClick={cancelDelete}></div>
+
+  {/* Modal Window */}
+  <div className="relative bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+    
+    {/* System Header */}
+    <div className="bg-black text-white px-4 py-2 flex justify-between items-center select-none">
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-xs uppercase tracking-widest animate-pulse">⚠ SYSTEM: DESTRUCTION_MODE</span>
+      </div>
+    </div>
+
+    <div className="p-8">
+      {/* Title Section */}
+      <div className="mb-8">
+        <h3 className="text-5xl font-black uppercase tracking-tighter leading-[0.85] mb-4">
+          Delete<br/>File?
+        </h3>
+        <p className="font-mono text-xs text-gray-500 uppercase tracking-widest leading-relaxed">
+          This operation cannot be reversed.
+        </p>
+      </div>
+
+      {/* Target Document Box */}
+      <div className="mb-8 border-2 border-black p-4 bg-gray-50 relative overflow-hidden">
+        {/* Striped background effect */}
+        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)', backgroundSize: '10px 10px' }}></div>
+        
+        <div className="relative z-10">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Target Resource</p>
+          <p className="font-bold text-lg text-black truncate leading-none">
+            "{title || 'Untitled Document'}"
+          </p>
+        </div>
+      </div>
+
+      {/* Consequences List */}
+      <div className="mb-8">
+        <ul className="text-xs font-bold space-y-3">
+          <li className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-black text-white flex items-center justify-center text-[10px] font-mono">1</div>
+            <span className="uppercase">Permanently erase content</span>
+          </li>
+          <li className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-black text-white flex items-center justify-center text-[10px] font-mono">2</div>
+            <span className="uppercase">Revoke all share links</span>
+          </li>
+          <li className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-black text-white flex items-center justify-center text-[10px] font-mono">3</div>
+            <span className="uppercase">Remove collaborator access</span>
+          </li>
+        </ul>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={confirmDelete}
+          className="w-full py-4 bg-black text-white font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-white hover:text-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none group"
+        >
+          <span className="group-hover:hidden">Confirm Delete</span>
+          <span className="hidden group-hover:inline-block">Execute Deletion</span>
+        </button>
+        <button
+          onClick={cancelDelete}
+          className="w-full py-4 bg-white text-black font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-gray-100 transition-all"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+      )}
     </div>
   );
 };
