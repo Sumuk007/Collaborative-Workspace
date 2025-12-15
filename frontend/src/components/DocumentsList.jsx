@@ -400,7 +400,7 @@ const DocumentsList = () => {
               </p>
             </div>
             
-            <div>
+            {/* <div>
               <h5 className="font-mono text-xs text-gray-500 uppercase tracking-widest mb-6">Platform</h5>
               <ul className="space-y-4 text-sm font-bold">
                 <li><a href="#" className="hover:text-gray-400 transition-colors">Overview</a></li>
@@ -415,6 +415,24 @@ const DocumentsList = () => {
                 <li><a href="#" className="hover:text-gray-400 transition-colors">Privacy Policy</a></li>
                 <li><a href="#" className="hover:text-gray-400 transition-colors">Terms of Service</a></li>
                 <li><a href="#" className="hover:text-gray-400 transition-colors">Security</a></li>
+              </ul>
+            </div> */}
+            
+            <div>
+              <h5 className="font-mono text-xs text-gray-500 uppercase tracking-widest mb-6">Features</h5>
+              <ul className="space-y-4 text-sm font-bold">
+                <li><a href="/" className="hover:text-gray-400 transition-colors">Real-time Editing</a></li>
+                <li><a href="/" className="hover:text-gray-400 transition-colors">Collaboration</a></li>
+                <li><a href="/" className="hover:text-gray-400 transition-colors">Share Links</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h5 className="font-mono text-xs text-gray-500 uppercase tracking-widest mb-6">Resources</h5>
+              <ul className="space-y-4 text-sm font-bold">
+                <li><a href="/" className="hover:text-gray-400 transition-colors">Home</a></li>
+                <li><a href="/forgot-password" className="hover:text-gray-400 transition-colors">Reset Password</a></li>
+                <li><a href="/" className="hover:text-gray-400 transition-colors">Help & Support</a></li>
               </ul>
             </div>
           </div>
