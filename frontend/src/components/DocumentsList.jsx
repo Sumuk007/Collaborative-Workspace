@@ -46,7 +46,6 @@ const DocumentsList = () => {
             const userCollab = collaborators.find(c => c.user_id === user.id);
             return { ...doc, userRole: userCollab?.role };
           } catch (err) {
-            console.error(`Failed to fetch role for document ${doc.id}:`, err);
             return doc;
           }
         })
@@ -54,7 +53,6 @@ const DocumentsList = () => {
       
       setDocuments(docsWithRoles);
     } catch (err) {
-      console.error('Failed to fetch documents:', err);
       setError('Failed to load documents. Please try again.');
     } finally {
       setLoading(false);
@@ -96,7 +94,6 @@ const DocumentsList = () => {
       await documentsAPI.delete(documentToDelete.id);
       await fetchDocuments();
     } catch (err) {
-      console.error('Failed to delete document:', err);
       setError('Failed to delete document. Please try again.');
     } finally {
       setDocumentToDelete(null);
@@ -129,7 +126,6 @@ const DocumentsList = () => {
       setShowCreateDialog(false);
       navigate(`/document/${newDoc.id}`);
     } catch (err) {
-      console.error('Failed to create document:', err);
       setError('Failed to create document. Please try again.');
     } finally {
       setCreating(false);
@@ -156,22 +152,22 @@ const DocumentsList = () => {
 
       {/* Navigation Bar */}
       <nav className="border-b-2 border-black sticky top-0 bg-white z-40">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-black flex items-center justify-center">
-              <div className="w-3 h-3 bg-white"></div>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex justify-between items-center">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-black flex items-center justify-center">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white"></div>
             </div>
-            <span className="text-xl font-black tracking-tighter uppercase">CollabDocs_</span>
+            <span className="text-base sm:text-xl font-black tracking-tighter uppercase">CollabDocs_</span>
           </div>
 
           <div className="relative">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="group flex items-center gap-4 pl-4 py-1 pr-1 cursor-pointer"
+              className="group flex items-center gap-2 sm:gap-4 pl-2 sm:pl-4 py-1 pr-1 cursor-pointer"
             >
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold uppercase tracking-wide leading-none">{user?.name}</p>
-                <p className="text-[10px] text-gray-500 font-mono mt-1">ID: {user?.username || 'USER_01'}</p>
+              <div className="text-right">
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide leading-none">{user?.name}</p>
+                <p className="text-[8px] sm:text-[10px] text-gray-500 font-mono mt-1">ID: {user?.username || 'USER_01'}</p>
               </div>
               <div className="w-10 h-10 border-2 border-black flex items-center justify-center bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:bg-black group-hover:text-white transition-all">
                  <span className="font-bold font-mono text-lg">{user?.name?.charAt(0).toUpperCase()}</span>
@@ -204,11 +200,11 @@ const DocumentsList = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-12 flex-grow w-full z-10 relative">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-12 flex-grow w-full z-10 relative">
         {/* Back Button */}
         <button
           onClick={handleBack}
-          className="flex items-center gap-2 mb-8 group"
+          className="flex items-center gap-2 mb-6 sm:mb-8 group"
         >
           <div className="w-8 h-8 border-2 border-black flex items-center justify-center bg-white group-hover:bg-black group-hover:text-white transition-all">
              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,24 +215,24 @@ const DocumentsList = () => {
         </button>
 
         {/* Header */}
-        <div className="mb-12 border-b-2 border-black pb-8">
-          <h1 className="text-6xl font-black uppercase tracking-tighter mb-2">
+        <div className="mb-8 sm:mb-12 border-b-2 border-black pb-6 sm:pb-8">
+          <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter mb-2">
             Archive<br/>Registry
           </h1>
-          <p className="font-mono text-sm text-gray-500 uppercase tracking-widest">
+          <p className="font-mono text-xs sm:text-sm text-gray-500 uppercase tracking-widest">
             Full database access and management
           </p>
         </div>
 
         {/* Search and Actions Bar */}
-        <div className="flex flex-col md:flex-row gap-6 mb-12">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 mb-8 sm:mb-12">
           <div className="flex-1 relative">
              <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="SEARCH DATABASE..."
-              className="w-full h-14 pl-4 pr-12 bg-white border-2 border-black text-black font-bold placeholder:text-gray-400 placeholder:font-mono focus:outline-none focus:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
+              className="w-full h-12 sm:h-14 pl-4 pr-12 bg-white border-2 border-black text-sm sm:text-base font-bold placeholder:text-gray-400 placeholder:font-mono focus:outline-none focus:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
             />
             {searchQuery ? (
                <button
@@ -256,7 +252,7 @@ const DocumentsList = () => {
 
           <button
             onClick={handleCreateDocument}
-            className="h-14 px-8 bg-black text-white font-bold text-sm uppercase tracking-widest border-2 border-black hover:bg-white hover:text-black hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none whitespace-nowrap"
+            className="h-12 sm:h-14 px-6 sm:px-8 bg-black text-white font-bold text-xs sm:text-sm uppercase tracking-widest border-2 border-black hover:bg-white hover:text-black hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none whitespace-nowrap"
           >
             + Create New
           </button>
@@ -291,7 +287,7 @@ const DocumentsList = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {filteredDocuments.map((doc) => {
                 return (
                   <div
@@ -391,8 +387,8 @@ const DocumentsList = () => {
 
        {/* Footer */}
        <footer className="bg-black text-white mt-auto z-10 relative">
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 border-b border-white/20 pb-16">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 sm:gap-12 mb-8 sm:mb-16 border-b border-white/20 pb-8 sm:pb-16">
             <div className="md:col-span-2">
               <h4 className="text-3xl font-black uppercase tracking-tighter mb-6">CollabDocs_</h4>
               <p className="text-gray-400 max-w-sm text-sm leading-relaxed">
@@ -447,7 +443,7 @@ const DocumentsList = () => {
       {showCreateDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-white/80 backdrop-blur-sm" onClick={handleCancelCreate}></div>
-          <div className="relative bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg p-8 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg p-6 sm:p-8 animate-in fade-in zoom-in-95 duration-200">
             <h2 className="text-3xl font-black mb-8 uppercase tracking-tight">New Document</h2>
             
             {error && (
@@ -525,7 +521,7 @@ const DocumentsList = () => {
   <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" onClick={cancelDelete}></div>
 
   {/* Modal Window */}
-  <div className="relative bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+  <div className="relative bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
     
     {/* System Header */}
     <div className="bg-black text-white px-4 py-2 flex justify-between items-center select-none">

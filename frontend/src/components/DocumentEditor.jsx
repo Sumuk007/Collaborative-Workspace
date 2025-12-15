@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { documentsAPI } from '../services/api';
+import ExportDocumentDialog from './ExportDocumentDialog';
 
 const DocumentEditor = () => {
   const { id } = useParams();
@@ -23,6 +24,7 @@ const DocumentEditor = () => {
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [currentFontSize, setCurrentFontSize] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [activeFormats, setActiveFormats] = useState({
     bold: false,
     italic: false,
@@ -65,12 +67,8 @@ const DocumentEditor = () => {
       
       // Fetch collaborators to determine user role
       const collaborators = await documentsAPI.getCollaborators(id);
-      console.log('Collaborators:', collaborators);
-      console.log('Current user ID:', user.id);
       const currentUserCollab = collaborators.find(c => c.user_id === user.id);
-      console.log('Current user collaborator:', currentUserCollab);
       const role = currentUserCollab?.role || null;
-      console.log('Setting user role to:', role);
       setUserRole(role);
       
       setCurrentDocument(doc);
@@ -83,7 +81,6 @@ const DocumentEditor = () => {
         contentEditableRef.current.innerHTML = doc.content || '';
       }
     } catch (err) {
-      console.error('Failed to fetch document:', err);
       setError('Failed to load document. You may not have access.');
     } finally {
       setLoading(false);
@@ -103,7 +100,6 @@ const DocumentEditor = () => {
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
     } catch (err) {
-      console.error('Failed to save document:', err);
       setError('Failed to save document. Please try again.');
     } finally {
       setSaving(false);
@@ -146,7 +142,7 @@ const DocumentEditor = () => {
       }
       setHasUnsavedChanges(true);
     } catch (err) {
-      console.error('Format error:', err);
+      // Format error
     }
   };
 
@@ -194,7 +190,7 @@ const DocumentEditor = () => {
       setHasUnsavedChanges(true);
       editor.focus();
     } catch (err) {
-      console.error('Font size error:', err);
+      // Font size error
     }
   };
 
@@ -260,7 +256,7 @@ const DocumentEditor = () => {
       }
       setCurrentFontSize('16'); // Default size
     } catch (err) {
-      console.error('Error updating format state:', err);
+      // Error updating format state
     }
   };
 
@@ -312,7 +308,6 @@ const DocumentEditor = () => {
       await documentsAPI.delete(id);
       navigate('/');
     } catch (err) {
-      console.error('Failed to delete document:', err);
       setError('Failed to delete document. Please try again.');
     }
   };
@@ -333,7 +328,7 @@ const DocumentEditor = () => {
   if (error && !currentDocument) {
     return (
       <div className="min-h-screen bg-white text-black font-sans flex items-center justify-center p-6">
-        <div className="w-full max-w-md border-2 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <div className="w-full max-w-md border-2 border-black p-6 sm:p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
           <div className="w-16 h-16 border-2 border-black bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-6">
             <span className="text-3xl font-black">!</span>
           </div>
@@ -362,27 +357,27 @@ const DocumentEditor = () => {
 
       {/* Navigation Bar */}
       <nav className="border-b-2 border-black sticky top-0 bg-white z-40">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-black flex items-center justify-center">
-              <div className="w-3 h-3 bg-white"></div>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex justify-between items-center">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-black flex items-center justify-center">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white"></div>
             </div>
-            <span className="text-xl font-black tracking-tighter uppercase">CollabDocs_</span>
+            <span className="text-base sm:text-xl font-black tracking-tighter uppercase">CollabDocs_</span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 sm:gap-4">
              {/* Unsaved Changes Indicator */}
             {hasUnsavedChanges && (
-              <span className="hidden md:inline-block px-3 py-1 bg-yellow-300 text-black text-xs font-bold uppercase tracking-wide border border-black animate-pulse">
+              <span className="hidden sm:inline-block px-3 py-1 bg-yellow-300 text-black text-xs font-bold uppercase tracking-wide border border-black animate-pulse">
                 Unsaved Changes
               </span>
             )}
             
             {/* Saving Indicator */}
             {saving && (
-              <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide">
+              <span className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-wide">
                 <span className="w-2 h-2 bg-black rounded-full animate-ping"></span>
-                Saving...
+                <span className="hidden sm:inline">Saving...</span>
               </span>
             )}
 
@@ -391,9 +386,12 @@ const DocumentEditor = () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-6 py-2 bg-black text-white font-bold text-xs uppercase tracking-widest border-2 border-black hover:bg-white hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed hidden sm:block"
+                className="px-2 sm:px-6 py-1.5 sm:py-2 bg-black text-white font-bold text-[10px] sm:text-xs uppercase tracking-widest border-2 border-black hover:bg-white hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Save
+                <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                <span className="hidden sm:inline">Save</span>
               </button>
             )}
 
@@ -401,19 +399,33 @@ const DocumentEditor = () => {
              {isOwner && (
                 <button
                   onClick={handleDelete}
-                  className="px-4 py-2 text-red-600 font-bold text-xs uppercase tracking-widest border-2 border-transparent hover:bg-red-50 hover:border-red-600 transition-all hidden sm:block"
+                  className="px-2 sm:px-4 py-1.5 sm:py-2 text-red-600 font-bold text-[10px] sm:text-xs uppercase tracking-widest border-2 border-transparent hover:bg-red-50 hover:border-red-600 transition-all flex items-center gap-2"
                 >
-                  Delete
+                  <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span className="hidden sm:inline">Delete</span>
                 </button>
               )}
+
+            {/* Document Export Button */}
+            <button
+              onClick={() => setShowExportDialog(true)}
+              className="p-1.5 sm:p-2 hover:bg-gray-100 transition-colors border-2 border-transparent hover:border-black"
+              title="Export Document"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
 
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="group flex items-center gap-4 pl-4 py-1 pr-1 cursor-pointer"
+                className="group flex items-center gap-2 sm:gap-4 pl-2 sm:pl-4 py-1 pr-1 cursor-pointer"
               >
-                <div className="w-10 h-10 border-2 border-black flex items-center justify-center bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:bg-black group-hover:text-white transition-all">
-                   <span className="font-bold font-mono text-lg">{user?.name?.charAt(0).toUpperCase()}</span>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 border-2 border-black flex items-center justify-center bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:bg-black group-hover:text-white transition-all">
+                   <span className="font-bold font-mono text-base sm:text-lg">{user?.name?.charAt(0).toUpperCase()}</span>
                 </div>
               </button>
 
@@ -444,11 +456,11 @@ const DocumentEditor = () => {
       </nav>
 
       {/* Editor Container */}
-      <div className="max-w-5xl mx-auto px-6 py-12 w-full z-10 relative">
+      <div className="max-w-5xl mx-auto px-3 sm:px-6 py-6 sm:py-12 w-full z-10 relative">
         {/* Back Button */}
         <button
           onClick={handleBack}
-          className="flex items-center gap-2 mb-8 group"
+          className="flex items-center gap-2 mb-6 sm:mb-8 group"
         >
           <div className="w-8 h-8 border-2 border-black flex items-center justify-center bg-white group-hover:bg-black group-hover:text-white transition-all">
              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -465,9 +477,9 @@ const DocumentEditor = () => {
           </div>
         )}
 
-        <div className="bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+        <div className="bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
           {/* Title Editor */}
-          <div className="border-b-2 border-black p-6 bg-white">
+          <div className="border-b-2 border-black p-4 sm:p-6 bg-white">
             <input
               type="text"
               value={title}
@@ -477,16 +489,16 @@ const DocumentEditor = () => {
               }}
               placeholder="UNTITLED PROJECT..."
               disabled={!canEdit}
-              className="w-full text-4xl font-black text-black placeholder-gray-300 outline-none uppercase tracking-tighter bg-transparent"
+              className="w-full text-2xl sm:text-4xl font-black text-black placeholder-gray-300 outline-none uppercase tracking-tighter bg-transparent"
             />
           </div>
 
           {/* Formatting Toolbar */}
           {canEdit && (
-            <div className="border-b-2 border-black px-4 py-3 bg-gray-50 flex items-center gap-4 flex-wrap sticky top-20 z-20">
+            <div className="border-b-2 border-black px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 flex items-center gap-2 sm:gap-4 flex-wrap sticky top-16 sm:top-20 z-20">
               {/* Font Size */}
-              <div className="flex items-center gap-2 pr-4 border-r-2 border-gray-200">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Size</span>
+              <div className="flex items-center gap-1 sm:gap-2 pr-2 sm:pr-4 border-r-2 border-gray-200">
+                <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-wider text-gray-500 hidden sm:inline">Size</span>
                 <select
                   value={currentFontSize}
                   onChange={(e) => {
@@ -495,7 +507,7 @@ const DocumentEditor = () => {
                       applyFontSize(size);
                     }
                   }}
-                  className="px-2 py-1 text-xs font-mono font-bold border-2 border-black bg-white focus:outline-none focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
+                  className="px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs font-mono font-bold border-2 border-black bg-white focus:outline-none focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
                 >
                   <option value="12">12px</option>
                   <option value="14">14px</option>
@@ -509,12 +521,12 @@ const DocumentEditor = () => {
               </div>
 
               {/* Font Styles */}
-              <div className="flex items-center gap-1 pr-4 border-r-2 border-gray-200">
+              <div className="flex items-center gap-0.5 sm:gap-1 pr-2 sm:pr-4 border-r-2 border-gray-200">
                  {['bold', 'italic', 'underline'].map((format) => (
                     <button
                       key={format}
                       onClick={() => handleFormat(format)}
-                      className={`p-2 border border-transparent hover:border-black transition-all ${activeFormats[format] ? 'bg-black text-white' : 'hover:bg-white text-black'}`}
+                      className={`p-1.5 sm:p-2 border border-transparent hover:border-black transition-all text-xs sm:text-sm ${activeFormats[format] ? 'bg-black text-white' : 'hover:bg-white text-black'}`}
                       title={format.charAt(0).toUpperCase() + format.slice(1)}
                     >
                         {format === 'bold' && <strong className="font-bold">B</strong>}
@@ -525,7 +537,7 @@ const DocumentEditor = () => {
               </div>
 
               {/* Text Alignment */}
-              <div className="flex items-center gap-1 pr-4 border-r-2 border-gray-200">
+              <div className="flex items-center gap-0.5 sm:gap-1 pr-2 sm:pr-4 border-r-2 border-gray-200">
                  {[
                    { id: 'justifyLeft', icon: <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M3 6h18M3 12h12M3 18h18" /> },
                    { id: 'justifyCenter', icon: <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M3 6h18M6 12h12M3 18h18" /> },
@@ -566,7 +578,7 @@ const DocumentEditor = () => {
           )}
 
           {/* Content Editor */}
-          <div className="p-8 md:p-12 min-h-[600px] bg-white">
+          <div className="p-4 sm:p-8 md:p-12 min-h-[400px] sm:min-h-[600px] bg-white">
             <style>{`
               [contenteditable] ul { list-style-type: square; margin-left: 20px; padding-left: 20px; }
               [contenteditable] ol { list-style-type: decimal-leading-zero; margin-left: 20px; padding-left: 20px; font-family: monospace; }
@@ -732,6 +744,13 @@ const DocumentEditor = () => {
   </div>
 </div>
       )}
+
+      {/* Export Dialog */}
+      <ExportDocumentDialog
+        isOpen={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        document={currentDocument}
+      />
     </div>
   );
 };

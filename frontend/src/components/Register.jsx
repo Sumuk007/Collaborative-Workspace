@@ -116,7 +116,7 @@ const Register = () => {
       <div className="w-full max-w-lg relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-300">
         
         {/* Main Card */}
-        <div className="bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-8 md:p-10">
+        <div className="bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 md:p-10">
           
           <div className="mb-8 border-b-2 border-black pb-6">
             <h1 className="text-4xl font-black uppercase tracking-tighter mb-2">Join the<br/>Network.</h1>

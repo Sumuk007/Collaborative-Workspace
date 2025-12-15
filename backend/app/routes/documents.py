@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -20,7 +21,9 @@ from app.services.document_service import (
     create_share_link,
     accept_share_link,
     revoke_share_link,
-    get_document_share_links
+    get_document_share_links,
+    export_document_to_pdf,
+    export_document_to_docx
 )
 from app.core.security import get_current_user
 from app.models.user import User
@@ -576,3 +579,122 @@ def revoke_document_share_link(
         )
     
     return None
+
+
+@router.get("/{document_id}/export/pdf")
+def export_document_pdf(
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Export document as PDF
+    
+    Returns:
+        PDF file download
+        
+    Raises:
+        404: Document not found or no access
+        500: Export failed
+    """
+    try:
+        # Get document to get the title
+        document = get_document_by_id(db, document_id)
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+        
+        # Check user access
+        user_role = get_user_role_for_document(db, document_id, current_user.id)
+        if not user_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied"
+            )
+        
+        # Generate PDF
+        pdf_buffer = export_document_to_pdf(db, document_id, current_user.id)
+        
+        # Create filename
+        filename = f"{document.title.replace(' ', '_')}.pdf"
+        
+        # Return as streaming response
+        return StreamingResponse(
+            pdf_buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to export document to PDF: {str(e)}"
+        )
+
+
+@router.get("/{document_id}/export/docx")
+def export_document_word(
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Export document as Word (DOCX)
+    
+    Returns:
+        DOCX file download
+        
+    Raises:
+        404: Document not found or no access
+        500: Export failed
+    """
+    try:
+        # Get document to get the title
+        document = get_document_by_id(db, document_id)
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+        
+        # Check user access
+        user_role = get_user_role_for_document(db, document_id, current_user.id)
+        if not user_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied"
+            )
+        
+        # Generate DOCX
+        docx_buffer = export_document_to_docx(db, document_id, current_user.id)
+        
+        # Create filename
+        filename = f"{document.title.replace(' ', '_')}.docx"
+        
+        # Return as streaming response
+        return StreamingResponse(
+            docx_buffer,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to export document to DOCX: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to export document to Word: {str(e)}"
+        )

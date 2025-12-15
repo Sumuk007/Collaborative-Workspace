@@ -32,13 +32,10 @@ function ShareLinkAccept() {
           navigate('/');
         }, 2000);
       } catch (err) {
-        console.error('Error accepting share link:', err);
-        console.error('Error response:', err.response?.data);
         if (err.response?.status === 404) {
           setError('This share link is invalid or has expired.');
         } else if (err.response?.status === 400) {
           const errorDetail = err.response?.data?.detail || 'Bad request';
-          console.log('Error detail:', errorDetail);
           
           // Check if it's a role conflict message (already a collaborator with same role)
           if (errorDetail.includes('already a') && errorDetail.includes('on this document')) {

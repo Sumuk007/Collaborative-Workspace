@@ -33,7 +33,6 @@ const ShareDocumentDialog = ({ isOpen, onClose, doc, onShareSuccess }) => {
         onClose();
       }, 2000);
     } catch (error) {
-      console.error('Error creating share link:', error);
       alert('Failed to create share link');
     } finally {
       setLoading(false);
@@ -50,7 +49,7 @@ const ShareDocumentDialog = ({ isOpen, onClose, doc, onShareSuccess }) => {
 
       {/* Modal Window */}
       <div 
-        className="relative bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200" 
+        className="relative bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200" 
         onClick={e => e.stopPropagation()}
       >
         {/* System Header Bar */}
@@ -67,7 +66,7 @@ const ShareDocumentDialog = ({ isOpen, onClose, doc, onShareSuccess }) => {
           </button>
         </div>
 
-        <div className="p-8">
+        <div className="p-6 sm:p-8">
           <div className="mb-8">
             <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">Share Access</h2>
             <p className="font-mono text-xs text-gray-500 uppercase tracking-widest truncate">

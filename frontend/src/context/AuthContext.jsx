@@ -16,7 +16,6 @@ export const AuthProvider = ({ children }) => {
           const userData = await authAPI.getCurrentUser();
           setUser(userData);
         } catch (error) {
-          console.error('Failed to fetch user:', error);
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
         }

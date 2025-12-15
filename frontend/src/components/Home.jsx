@@ -45,7 +45,6 @@ const Home = () => {
             const userCollab = collaborators.find(c => c.user_id === user.id);
             return { ...doc, userRole: userCollab?.role };
           } catch (err) {
-            console.error(`Failed to fetch role for document ${doc.id}:`, err);
             return doc;
           }
         })
@@ -63,7 +62,6 @@ const Home = () => {
         sharedLinks: sharedLinksCount
       });
     } catch (err) {
-      console.error('Failed to fetch documents:', err);
       setError('Failed to load documents. Please try again.');
     } finally {
       setLoading(false);
@@ -96,7 +94,6 @@ const Home = () => {
       setShowCreateDialog(false);
       navigate(`/document/${newDoc.id}`);
     } catch (err) {
-      console.error('Failed to create document:', err);
       setError('Failed to create document. Please try again.');
     } finally {
       setCreating(false);
@@ -139,7 +136,6 @@ const Home = () => {
       await documentsAPI.delete(documentToDelete.id);
       await fetchDocuments();
     } catch (err) {
-      console.error('Failed to delete document:', err);
       setError('Failed to delete document. Please try again.');
     } finally {
       setDocumentToDelete(null);
@@ -155,24 +151,24 @@ const Home = () => {
     <div className="min-h-screen bg-white text-black font-sans selection:bg-black selection:text-white flex flex-col">
       {/* Navigation Bar */}
       <nav className="border-b-2 border-black sticky top-0 bg-white z-40">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-20 flex justify-between items-center">
           {/* Version 2 Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-black flex items-center justify-center">
-              <div className="w-3 h-3 bg-white"></div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-black flex items-center justify-center">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white"></div>
             </div>
-            <span className="text-xl font-black tracking-tighter uppercase">CollabDocs_</span>
+            <span className="text-base sm:text-xl font-black tracking-tighter uppercase">CollabDocs_</span>
           </div>
 
           <div className="relative">
             {/* Modified Profile Button: Removed hover border, added ID text */}
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="group flex items-center gap-4 pl-4 py-1 pr-1 cursor-pointer"
+              className="group flex items-center gap-2 sm:gap-4 pl-2 sm:pl-4 py-1 pr-1 cursor-pointer"
             >
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold uppercase tracking-wide leading-none">{user?.name}</p>
-                <p className="text-[10px] text-gray-500 font-mono mt-1">ID: {user?.username || 'USER_01'}</p>
+              <div className="text-right">
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide leading-none">{user?.name}</p>
+                <p className="text-[8px] sm:text-[10px] text-gray-500 font-mono mt-1">ID: {user?.username || 'USER_01'}</p>
               </div>
               <div className="w-10 h-10 border-2 border-black flex items-center justify-center bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:bg-black group-hover:text-white transition-all">
                  <span className="font-bold font-mono text-lg">{user?.name?.charAt(0).toUpperCase()}</span>
@@ -205,21 +201,21 @@ const Home = () => {
       </nav>
 
       {/* Main Content (Version 1 Layout) */}
-      <main className="max-w-7xl mx-auto px-6 py-12 flex-grow w-full">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-12 flex-grow w-full">
         {/* Header Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-12 mb-8 sm:mb-16">
           <div className="lg:col-span-8">
-            <h1 className="text-6xl md:text-7xl font-black tracking-tighter leading-[0.9] mb-6">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tighter leading-[0.9] mb-4 sm:mb-6">
               YOUR <br/> WORKSPACE.
             </h1>
-            <p className="text-xl font-medium text-gray-600 max-w-lg">
+            <p className="text-base sm:text-xl font-medium text-gray-600 max-w-lg">
               Manage your documents, collaborate in real-time, and keep track of your team's progress.
             </p>
           </div>
           
           {/* Stats Box */}
           <div className="lg:col-span-4 flex flex-col justify-end">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div className="border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white">
                 <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Documents</p>
                 <p className="text-4xl font-mono font-bold">{stats.totalDocuments}</p>
@@ -280,12 +276,12 @@ const Home = () => {
           </div>
         ) : (
           /* Documents Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {documents.slice(0, 6).map((doc) => (
               <div 
                 key={doc.id}
                 onClick={() => handleDocumentClick(doc.id)}
-                className="group relative bg-white border-2 border-black p-6 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer hover:-translate-y-1"
+                className="group relative bg-white border-2 border-black p-4 sm:p-6 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer hover:-translate-y-1"
               >
                 <div className="flex justify-between items-start mb-6">
                   <div className="w-10 h-10 bg-gray-100 border border-black flex items-center justify-center text-black">
@@ -385,8 +381,8 @@ const Home = () => {
 
       {/* Footer */}
       <footer className="bg-black text-white mt-auto z-10 relative">
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 border-b border-white/20 pb-16">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 sm:gap-12 mb-8 sm:mb-16 border-b border-white/20 pb-8 sm:pb-16">
             <div className="md:col-span-2">
               <h4 className="text-3xl font-black uppercase tracking-tighter mb-6">CollabDocs_</h4>
               <p className="text-gray-400 max-w-sm text-sm leading-relaxed">
@@ -441,7 +437,7 @@ const Home = () => {
       {showCreateDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-white/80 backdrop-blur-sm" onClick={handleCancelCreate}></div>
-          <div className="relative bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg p-8 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg p-6 sm:p-8 animate-in fade-in zoom-in-95 duration-200">
             <h2 className="text-3xl font-black mb-8 uppercase tracking-tight">New Document</h2>
             
             {error && (
@@ -518,7 +514,7 @@ const Home = () => {
   <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" onClick={cancelDelete}></div>
 
   {/* Modal Window */}
-  <div className="relative bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+  <div className="relative bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
     
     {/* System Header */}
     <div className="bg-black text-white px-4 py-2 flex justify-between items-center select-none">

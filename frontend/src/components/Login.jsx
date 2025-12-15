@@ -64,7 +64,7 @@ const Login = () => {
       <div className="w-full max-w-md relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-300">
         
         {/* Main Card */}
-        <div className="bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-8 md:p-12">
+        <div className="bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 md:p-12">
           
           <div className="mb-10">
             <h1 className="text-4xl font-black uppercase tracking-tighter mb-2">Welcome<br/>Back.</h1>

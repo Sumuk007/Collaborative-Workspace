@@ -33,7 +33,6 @@ const ViewCollaboratorsDialog = ({ document, onClose }) => {
       const data = await documentsAPI.getCollaborators(document.id);
       setCollaborators(data);
     } catch (err) {
-      console.error('Failed to fetch collaborators:', err);
       setError('Failed to load collaborators. Please try again.');
     } finally {
       setLoading(false);
@@ -62,7 +61,6 @@ const ViewCollaboratorsDialog = ({ document, onClose }) => {
       // Refresh the collaborators list
       await fetchCollaborators();
     } catch (err) {
-      console.error('Failed to remove collaborator:', err);
       setError('Failed to remove collaborator. Please try again.');
     } finally {
       setRemovingUserId(null);
@@ -111,7 +109,7 @@ const ViewCollaboratorsDialog = ({ document, onClose }) => {
 
       {/* Modal Window */}
       <div 
-        className="relative bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-2xl max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200"
+        className="relative bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-2xl max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* System Header Bar */}
@@ -154,7 +152,7 @@ const ViewCollaboratorsDialog = ({ document, onClose }) => {
         )}
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 scroll-smooth">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 scroll-smooth">
           {error && (
             <div className="bg-red-50 border-2 border-red-600 p-4 mb-4 flex items-center gap-3">
               <span className="font-bold text-red-600 text-xl">!</span>

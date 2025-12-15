@@ -94,7 +94,7 @@ export const authAPI = {
     try {
       await api.post('/auth/logout');
     } catch (error) {
-      console.error('Logout error:', error);
+      // Logout failed
     } finally {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
@@ -172,6 +172,20 @@ export const documentsAPI = {
 
   acceptShareLink: async (token) => {
     const response = await api.post(`/documents/share/${token}/accept`);
+    return response.data;
+  },
+
+  exportToPdf: async (documentId) => {
+    const response = await api.get(`/documents/${documentId}/export/pdf`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  exportToDocx: async (documentId) => {
+    const response = await api.get(`/documents/${documentId}/export/docx`, {
+      responseType: 'blob',
+    });
     return response.data;
   },
 };
